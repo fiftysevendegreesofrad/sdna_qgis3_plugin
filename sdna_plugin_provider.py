@@ -11,25 +11,67 @@
  ***************************************************************************/
 """
 
-__author__ = "Jeffrey Morgan"
-__date__ = "2020-07-08"
-__copyright__ = "(C) 2020 by Jeffrey Morgan"
+__author__ = "Crispin Cooper, Jeffrey Morgan"
+__date__ = "July 2020"
+__copyright__ = "(C) 2020 Cardiff University"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
 __revision__ = "$Format:%H$"
 
+import os
+import sys
+from importlib import reload
+
+from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QMessageBox
+from qgis.core import QgsMessageLog
 from qgis.core import QgsProcessingProvider
+
 from .sdna_plugin_algorithm import SDNAAlgorithm
 
 
-class sdna_pluginProvider(QgsProcessingProvider):
+class SDNAPluginProvider(QgsProcessingProvider):
+
+    # SDNA_FOLDER_SETTING = "SDNA_FOLDER_SETTING"
 
     def __init__(self):
-        """
-        Default constructor.
-        """
+        self.sdna_path = None
+        self.run_sdna_command = None
         QgsProcessingProvider.__init__(self)
+        self.import_sdna_library()
+
+    def import_sdna_library(self):
+        # sdna_root_dir = ProcessingConfig.getSetting(SDNA_FOLDER_SETTING)
+        sdna_root_dir = "/Users/jeff/Programming/Work/sDNA/sdna_open/arcscripts"
+        # sdna_root_dir = "c:\\Program Files (x86)\\sDNA"
+        self.sdna_path = '"' + os.path.join(sdna_root_dir, "bin") + '"'
+        QgsMessageLog.logMessage(f"sDNA root: {sdna_root_dir}", "sDNA")
+        if sdna_root_dir not in sys.path:
+            sys.path.insert(0, sdna_root_dir)
+        try:
+            import sDNAUISpec
+            import runsdnacommand
+            reload(sDNAUISpec)
+            reload(runsdnacommand)
+            self.run_sdna_command = runsdnacommand.runsdnacommand
+            QgsMessageLog.logMessage("Successfully imported sDNA modules", "sDNA")
+            for tool_class in sDNAUISpec.get_tools():
+                print(tool_class)
+        except ImportError as e:
+            QgsMessageLog.logMessage(str(e), "sDNA")
+            self.show_install_sdna_message()
+
+    def show_install_sdna_message(self):
+        QMessageBox.critical(
+            QDialog(),
+            "sDNA: Error",
+            (
+                "Please ensure sDNA version 3.0 or later is installed ensure"
+                "the sDNA installation folder is set correctly in"
+                "Processing -> Options -> Providers -> Spatial Design Network Analysis"
+            )
+        )
 
     def unload(self):
         """

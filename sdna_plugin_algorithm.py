@@ -11,9 +11,9 @@
  ***************************************************************************/
 """
 
-__author__ = "Jeffrey Morgan"
-__date__ = "2020-07-08"
-__copyright__ = "(C) 2020 by Jeffrey Morgan"
+__author__ = "Crispin Cooper, Jeffrey Morgan"
+__date__ = "July 2020"
+__copyright__ = "(C) 2020 Cardiff University"
 
 # This will get replaced with a git SHA1 when you do a git archive
 

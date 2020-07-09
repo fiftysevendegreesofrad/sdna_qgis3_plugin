@@ -11,20 +11,21 @@
  ***************************************************************************/
 """
 
-__author__ = 'Jeffrey Morgan'
-__date__ = '2020-07-08'
-__copyright__ = '(C) 2020 by Jeffrey Morgan'
+__author__ = "Crispin Cooper, Jeffrey Morgan"
+__date__ = "July 2020"
+__copyright__ = "(C) 2020 Cardiff University"
 
 # This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = '$Format:%H$'
+__revision__ = "$Format:%H$"
 
 import os
 import sys
 import inspect
 
-from qgis.core import QgsProcessingAlgorithm, QgsApplication
-from .sdna_plugin_provider import sdna_pluginProvider
+from qgis.core import QgsApplication
+
+from .sdna_plugin_provider import SDNAPluginProvider
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 
@@ -39,7 +40,7 @@ class SDNAPlugin(object):
 
     def initProcessing(self):
         """Init Processing provider for QGIS >= 3.8."""
-        self.provider = sdna_pluginProvider()
+        self.provider = SDNAPluginProvider()
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
