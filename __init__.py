@@ -35,5 +35,5 @@ def classFactory(iface):  # pylint: disable=invalid-name
     :type iface: QgsInterface
     """
     #
-    from .sdna_plugin import sdna_pluginPlugin
-    return sdna_pluginPlugin()
+    from .sdna_plugin import SDNAPlugin
+    return SDNAPlugin()
