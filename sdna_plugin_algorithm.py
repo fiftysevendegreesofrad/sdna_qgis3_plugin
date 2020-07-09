@@ -23,18 +23,21 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProcessingAlgorithm
 from qgis.core import QgsProcessingUtils
 from qgis.core import QgsVectorFileWriter
+from qgis.core import QgsMessageLog
 from qgis.core import QgsProcessingParameterString
 from qgis.core import QgsProcessingParameterBoolean
 from qgis.core import QgsProcessingParameterFile
 from qgis.core import QgsProcessingOutputVectorLayer
 from qgis.core import QgsProcessingOutputFile
 from qgis.core import QgsProcessingParameterField
+from qgis.core import QgsProcessingParameterVectorLayer
 
 
 class SDNAAlgorithm(QgsProcessingAlgorithm):
 
     def __init__(self, algorithm_spec):
         QgsProcessingAlgorithm.__init__(self)
+        self.outputs = []
         self.varnames = []
         self.outputnames = []
         self.selectvaroptions = {}
@@ -47,10 +50,10 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         """
         # print(config)
 
-        # sdna_to_qgis_vectortype = {
-        #     "Polyline": ParameterVector.VECTOR_TYPE_LINE,
-        #     None: ParameterVector.VECTOR_TYPE_ANY
-        # }
+        sdna_to_qgis_vectortype = {
+            "Polyline": 0,  # TODO: ParameterVector.VECTOR_TYPE_LINE,
+            None: 1  # TODO: ParameterVector.VECTOR_TYPE_ANY
+        }
         sdna_to_qgis_fieldtype = {
             "Numeric": QgsProcessingParameterField.DataType.Numeric,
             "String": QgsProcessingParameterField.DataType.String
@@ -64,28 +67,28 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 self.varnames += [varname]
 
             if datatype == "FC":
-                pass
-                # self.addParameter(ParameterVector(varname, self.tr(displayname), sdna_to_qgis_vectortype[filter], not required))
-                # self.addParameter(ParameterVector(varname, self.tr(displayname), sdna_to_qgis_vectortype[filter], not required))
+                print("FC:", varname, self.tr(displayname), f"filter={filter}")
+                self.addParameter(QgsProcessingParameterVectorLayer(varname, self.tr(displayname), types=[sdna_to_qgis_vectortype[filter]], optional=not required))
             elif datatype == "OFC":
-                # self.addOutput(OutputVector(varname, self.tr(displayname)))
-                self.addOutput(QgsProcessingOutputVectorLayer(varname, self.tr(displayname)))
+                output = QgsProcessingOutputVectorLayer(varname, self.tr(displayname))
+                self.outputs.append(output)
+                self.addOutput(output)
             elif datatype == "InFile":
                 print("INFILE:", varname, self.tr(displayname), f"filter={filter}")
-                # self.addParameter(ParameterFile(varname, self.tr(displayname), False, not required, filter))
-                # self.addParameter(ParameterFile(varname, self.tr(displayname), False, not required, filter))
+                self.addParameter(QgsProcessingParameterFile(varname, self.tr(displayname), behavior=QgsProcessingParameterFile.File, optional=not required, fileFilter=filter))
             elif datatype == "MultiInFile":
-                self.addParameter(QgsProcessingParameterFile(varname, self.tr(displayname), QgsProcessingParameterFile.File, optional=not required))
+                self.addParameter(QgsProcessingParameterFile(varname, self.tr(displayname), behavior=QgsProcessingParameterFile.File, optional=not required))
             elif datatype == "OutFile":
+                print("OUTFILE:", varname, self.tr(displayname), f"filter={filter}")
                 # self.addOutput(OutputFile(varname, self.tr(displayname), filter))
-                self.addOutput(QgsProcessingOutputFile(varname, self.tr(displayname)))
+                output = QgsProcessingOutputFile(varname, self.tr(displayname))
+                self.outputs.append(output)
+                self.addOutput(output)
             elif datatype == "Field":
                 fieldtype, source = filter
                 self.addParameter(QgsProcessingParameterField(varname, self.tr(displayname), parentLayerParameterName=source, type=sdna_to_qgis_fieldtype[fieldtype], optional=not required))
             elif datatype == "MultiField":
-                pass
-                # self.addParameter(ParameterString(varname, self.tr(displayname + " (field names separated by commas)"), default, False, not required))
-                # self.addParameter(ParameterString(varname, self.tr(displayname + " (field names separated by commas)"), default, False, not required))
+                self.addParameter(QgsProcessingParameterString(varname, self.tr(displayname) + " (field names separated by commas)", defaultValue=default, multiLine=False, optional=not required))
             elif datatype == "Bool":
                 self.addParameter(QgsProcessingParameterBoolean(varname, self.tr(displayname), default))
             elif datatype == "Text":
@@ -94,10 +97,10 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     # self.addParameter(ParameterSelection(varname, self.tr(displayname), filter))
                     # self.selectvaroptions[varname] = filter
                 else:
-                    self.addParameter(QgsProcessingParameterString(varname, self.tr(displayname), default, False, not required))
+                    self.addParameter(QgsProcessingParameterString(varname, self.tr(displayname), defaultValue=default, multiLine=False, optional=not required))
             else:
                 raise Exception(f"Unrecognized parameter type: '{datatype}'")  # TODO: Raise this exception
-                assert False  # unrecognized parameter type
+                # assert False  # unrecognized parameter type
 
             # print("outputnames:", self.outputnames)
             # print("varnames:", self.varnames)
@@ -106,8 +109,12 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         # TODO: Warn user that selections are ignored
         args = self.extract_args()
         print(args)
+        QgsMessageLog.logMessage(f"args: {args}", "sDNA")
+
         syntax = self.extract_syntax(args)
         print(syntax)
+        QgsMessageLog.logMessage(f"syntax: {syntax}", "sDNA")
+
         self.issue_sdna_command(syntax)
 
     def extract_args(self):
@@ -118,8 +125,8 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
             elif hasattr(output, "getValueAsCommandLineParameter"):
                 args[outname] = output.getValueAsCommandLineParameter().replace('"', '')  # strip quotes - sdna adds them again
             else:
-                # raise Exception("Invalid output type")  # TODO: Raise this exception
-                assert False  # don't know what to do with this output type
+                raise Exception(f"Invalid output type {output}")  # TODO: Raise this exception
+                # assert False  # don't know what to do with this output type
         for vn in self.varnames:
             args[vn] = self.getParameterValue(vn)
             if vn in self.selectvaroptions:
