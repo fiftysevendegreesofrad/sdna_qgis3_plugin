@@ -19,9 +19,9 @@ __copyright__ = "(C) 2020 Cardiff University"
 
 __revision__ = "$Format:%H$"
 
+import inspect
 import os
 import sys
-import inspect
 
 from qgis.core import QgsApplication
 

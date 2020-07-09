@@ -21,7 +21,6 @@ __revision__ = "$Format:%H$"
 
 import os
 import sys
-from importlib import reload
 
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QMessageBox
@@ -38,6 +37,7 @@ class SDNAPluginProvider(QgsProcessingProvider):
     def __init__(self):
         self.sdna_path = None
         self.run_sdna_command = None
+        self.sdna_algorithm_spec_classes = None
         QgsProcessingProvider.__init__(self)
         self.import_sdna_library()
 
@@ -52,12 +52,9 @@ class SDNAPluginProvider(QgsProcessingProvider):
         try:
             import sDNAUISpec
             import runsdnacommand
-            reload(sDNAUISpec)
-            reload(runsdnacommand)
+            self.sdna_algorithm_spec_classes = sDNAUISpec.get_tools()
             self.run_sdna_command = runsdnacommand.runsdnacommand
             QgsMessageLog.logMessage("Successfully imported sDNA modules", "sDNA")
-            for tool_class in sDNAUISpec.get_tools():
-                print(tool_class)
         except ImportError as e:
             QgsMessageLog.logMessage(str(e), "sDNA")
             self.show_install_sdna_message()
@@ -84,9 +81,10 @@ class SDNAPluginProvider(QgsProcessingProvider):
         """
         Loads all algorithms belonging to this provider.
         """
-        self.addAlgorithm(SDNAAlgorithm())
-        # add additional algorithms here
-        # self.addAlgorithm(MyOtherAlgorithm())
+        for sdna_algorithm_spec_class in self.sdna_algorithm_spec_classes:
+            sdna_algorithm_spec = sdna_algorithm_spec_class()
+            sdna_algorithm = SDNAAlgorithm(sdna_algorithm_spec)
+            self.addAlgorithm(sdna_algorithm)
 
     def id(self):
         """
@@ -100,10 +98,8 @@ class SDNAPluginProvider(QgsProcessingProvider):
         """
         Returns the provider name, which is used to describe the provider
         within the GUI.
-
-        This string should be short (e.g. "Lastools") and localised.
         """
-        return self.tr("sDNA Provider")
+        return self.tr("sDNA")
 
     def icon(self):
         """
@@ -119,4 +115,4 @@ class SDNAPluginProvider(QgsProcessingProvider):
         (version 2.2.1)". This string should be localised. The default
         implementation returns the same string as name().
         """
-        return self.name()
+        return self.tr("Spatial Design Network Analysis")

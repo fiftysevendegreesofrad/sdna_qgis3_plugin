@@ -20,59 +20,22 @@ __copyright__ = "(C) 2020 Cardiff University"
 __revision__ = "$Format:%H$"
 
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import (QgsProcessing,
-                       QgsFeatureSink,
-                       QgsProcessingAlgorithm,
-                       QgsProcessingParameterFeatureSource,
-                       QgsProcessingParameterFeatureSink)
+from qgis.core import QgsProcessingAlgorithm
 
 
 class SDNAAlgorithm(QgsProcessingAlgorithm):
-    """
-    This is an example algorithm that takes a vector layer and
-    creates a new identical one.
 
-    It is meant to be used as an example of how to create your own
-    algorithms and explain methods and variables used to do it. An
-    algorithm like this will be available in all elements, and there
-    is not need for additional work.
-
-    All Processing algorithms should extend the QgsProcessingAlgorithm
-    class.
-    """
-
-    # Constants used to refer to parameters and outputs. They will be
-    # used when calling the algorithm from another algorithm, or when
-    # calling from the QGIS console.
-
-    OUTPUT = "OUTPUT"
-    INPUT = "INPUT"
+    def __init__(self, algorithm_spec):
+        self.algorithm_spec = algorithm_spec
+        QgsProcessingAlgorithm.__init__(self)
+        print("Algorithm Spec:", self.algorithm_spec)
 
     def initAlgorithm(self, config):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
-
-        # We add the input vector features source. It can have any kind of
-        # geometry.
-        self.addParameter(
-            QgsProcessingParameterFeatureSource(
-                self.INPUT,
-                self.tr("Input layer"),
-                [QgsProcessing.TypeVectorAnyGeometry]
-            )
-        )
-
-        # We add a feature sink in which to store our processed features (this
-        # usually takes the form of a newly created vector layer when the
-        # algorithm is run in QGIS).
-        self.addParameter(
-            QgsProcessingParameterFeatureSink(
-                self.OUTPUT,
-                self.tr("Output layer")
-            )
-        )
+        print(config)
 
     def processAlgorithm(self, parameters, context, feedback):
         """
@@ -88,7 +51,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return "sDNA"
+        return self.algorithm_spec.alias
 
     def displayName(self):
         """
@@ -112,10 +75,11 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return "sDNA Group"
+        return self.algorithm_spec.category
 
-    def tr(self, string):
+    @staticmethod
+    def tr(string):
         return QCoreApplication.translate("Processing", string)
 
     def createInstance(self):
-        return SDNAAlgorithm()
+        return SDNAAlgorithm(self.algorithm_spec)
