@@ -26,6 +26,9 @@ from qgis.core import QgsVectorFileWriter
 from qgis.core import QgsProcessingParameterString
 from qgis.core import QgsProcessingParameterBoolean
 from qgis.core import QgsProcessingParameterFile
+from qgis.core import QgsProcessingOutputVectorLayer
+from qgis.core import QgsProcessingOutputFile
+from qgis.core import QgsProcessingParameterField
 
 
 class SDNAAlgorithm(QgsProcessingAlgorithm):
@@ -44,6 +47,15 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         """
         # print(config)
 
+        # sdna_to_qgis_vectortype = {
+        #     "Polyline": ParameterVector.VECTOR_TYPE_LINE,
+        #     None: ParameterVector.VECTOR_TYPE_ANY
+        # }
+        sdna_to_qgis_fieldtype = {
+            "Numeric": QgsProcessingParameterField.DataType.Numeric,
+            "String": QgsProcessingParameterField.DataType.String
+        }
+
         for varname, displayname, datatype, filter, default, required in self.algorithm_spec.getInputSpec():
             print(varname, displayname, datatype, filter, default, required)
             if datatype == "OFC" or datatype == "OutFile":
@@ -56,9 +68,8 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 # self.addParameter(ParameterVector(varname, self.tr(displayname), sdna_to_qgis_vectortype[filter], not required))
                 # self.addParameter(ParameterVector(varname, self.tr(displayname), sdna_to_qgis_vectortype[filter], not required))
             elif datatype == "OFC":
-                pass
                 # self.addOutput(OutputVector(varname, self.tr(displayname)))
-                # self.addOutput(OutputVector(varname, self.tr(displayname)))
+                self.addOutput(QgsProcessingOutputVectorLayer(varname, self.tr(displayname)))
             elif datatype == "InFile":
                 print("INFILE:", varname, self.tr(displayname), f"filter={filter}")
                 # self.addParameter(ParameterFile(varname, self.tr(displayname), False, not required, filter))
@@ -66,13 +77,11 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
             elif datatype == "MultiInFile":
                 self.addParameter(QgsProcessingParameterFile(varname, self.tr(displayname), QgsProcessingParameterFile.File, optional=not required))
             elif datatype == "OutFile":
-                pass
                 # self.addOutput(OutputFile(varname, self.tr(displayname), filter))
-                # self.addOutput(OutputFile(varname, self.tr(displayname), filter))
+                self.addOutput(QgsProcessingOutputFile(varname, self.tr(displayname)))
             elif datatype == "Field":
                 fieldtype, source = filter
-                # self.addParameter(ParameterTableField(varname, self.tr(displayname), source, sdna_to_qgis_fieldtype[fieldtype], not required))
-                # self.addParameter(ParameterTableField(varname, self.tr(displayname), source, sdna_to_qgis_fieldtype[fieldtype], not required))
+                self.addParameter(QgsProcessingParameterField(varname, self.tr(displayname), parentLayerParameterName=source, type=sdna_to_qgis_fieldtype[fieldtype], optional=not required))
             elif datatype == "MultiField":
                 pass
                 # self.addParameter(ParameterString(varname, self.tr(displayname + " (field names separated by commas)"), default, False, not required))
@@ -90,8 +99,8 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 raise Exception(f"Unrecognized parameter type: '{datatype}'")  # TODO: Raise this exception
                 assert False  # unrecognized parameter type
 
-            print("outputnames:", self.outputnames)
-            print("varnames:", self.varnames)
+            # print("outputnames:", self.outputnames)
+            # print("varnames:", self.varnames)
 
     def processAlgorithm(self, parameters, context, feedback):
         # TODO: Warn user that selections are ignored
