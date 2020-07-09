@@ -19,6 +19,9 @@ __copyright__ = "(C) 2020 Cardiff University"
 
 __revision__ = "$Format:%H$"
 
+from PyQt5.QtCore import QMetaType
+from PyQt5.QtCore import QVariant
+
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProcessingAlgorithm
 from qgis.core import QgsProcessingUtils
@@ -31,6 +34,7 @@ from qgis.core import QgsProcessingOutputVectorLayer
 from qgis.core import QgsProcessingOutputFile
 from qgis.core import QgsProcessingParameterField
 from qgis.core import QgsProcessingParameterVectorLayer
+from qgis.core import QgsProcessingParameterEnum
 
 
 class SDNAAlgorithm(QgsProcessingAlgorithm):
@@ -60,27 +64,26 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         }
 
         for varname, displayname, datatype, filter, default, required in self.algorithm_spec.getInputSpec():
-            print(varname, displayname, datatype, filter, default, required)
+            # print(varname, displayname, datatype, filter, default, required)
             if datatype == "OFC" or datatype == "OutFile":
                 self.outputnames += [varname]
             else:
                 self.varnames += [varname]
 
             if datatype == "FC":
-                print("FC:", varname, self.tr(displayname), f"filter={filter}")
+                # print("FC:", varname, self.tr(displayname), f"filter={filter}")
                 self.addParameter(QgsProcessingParameterVectorLayer(varname, self.tr(displayname), types=[sdna_to_qgis_vectortype[filter]], optional=not required))
             elif datatype == "OFC":
                 output = QgsProcessingOutputVectorLayer(varname, self.tr(displayname))
                 self.outputs.append(output)
                 self.addOutput(output)
             elif datatype == "InFile":
-                print("INFILE:", varname, self.tr(displayname), f"filter={filter}")
+                # print("INFILE:", varname, self.tr(displayname), f"filter={filter}")
                 self.addParameter(QgsProcessingParameterFile(varname, self.tr(displayname), behavior=QgsProcessingParameterFile.File, optional=not required, fileFilter=filter))
             elif datatype == "MultiInFile":
                 self.addParameter(QgsProcessingParameterFile(varname, self.tr(displayname), behavior=QgsProcessingParameterFile.File, optional=not required))
             elif datatype == "OutFile":
-                print("OUTFILE:", varname, self.tr(displayname), f"filter={filter}")
-                # self.addOutput(OutputFile(varname, self.tr(displayname), filter))
+                # print("OUTFILE:", varname, self.tr(displayname), f"filter={filter}")
                 output = QgsProcessingOutputFile(varname, self.tr(displayname))
                 self.outputs.append(output)
                 self.addOutput(output)
@@ -93,21 +96,21 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 self.addParameter(QgsProcessingParameterBoolean(varname, self.tr(displayname), default))
             elif datatype == "Text":
                 if filter:
-                    pass
-                    # self.addParameter(ParameterSelection(varname, self.tr(displayname), filter))
-                    # self.selectvaroptions[varname] = filter
+                    self.addParameter(QgsProcessingParameterEnum(varname, self.tr(displayname), options=filter, defaultValue=0, optional=not required))
+                    self.selectvaroptions[varname] = filter
                 else:
                     self.addParameter(QgsProcessingParameterString(varname, self.tr(displayname), defaultValue=default, multiLine=False, optional=not required))
             else:
-                raise Exception(f"Unrecognized parameter type: '{datatype}'")  # TODO: Raise this exception
-                # assert False  # unrecognized parameter type
+                raise Exception(f"Unrecognized parameter type: '{datatype}'")
 
             # print("outputnames:", self.outputnames)
             # print("varnames:", self.varnames)
 
     def processAlgorithm(self, parameters, context, feedback):
+
         # TODO: Warn user that selections are ignored
-        args = self.extract_args()
+
+        args = self.extract_args(parameters, context)
         print(args)
         QgsMessageLog.logMessage(f"args: {args}", "sDNA")
 
@@ -117,22 +120,32 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
         self.issue_sdna_command(syntax)
 
-    def extract_args(self):
+        return {}
+
+    def extract_args(self, parameters, context):
         args = {}
         for outname, output in zip(self.outputnames, self.outputs):
+            print(f"outname={outname}; output={output}")
             if hasattr(output, "getCompatibleFileName"):
                 args[outname] = output.getCompatibleFileName(self)
             elif hasattr(output, "getValueAsCommandLineParameter"):
                 args[outname] = output.getValueAsCommandLineParameter().replace('"', '')  # strip quotes - sdna adds them again
             else:
-                raise Exception(f"Invalid output type {output}")  # TODO: Raise this exception
-                # assert False  # don't know what to do with this output type
+                print(f"Invalid output type {output}")
+                # raise Exception(f"Invalid output type {output}")
         for vn in self.varnames:
-            args[vn] = self.getParameterValue(vn)
+            value = parameters[vn]
+            value = None if type(value) == QVariant and value.isNull() else value
+            args[vn] = value
+            print(f"{vn}: {args[vn]} ({type(args[vn])})")
             if vn in self.selectvaroptions:
                 args[vn] = self.selectvaroptions[vn][args[vn]]
             if args[vn] is None:
                 args[vn] = ""
+
+        args["input"] = "dummy"  # TODO: Temporary to move things along
+        args["output"] = "dummy"  # TODO: Temporary to move things along
+
         return args
 
     def extract_syntax(self, args):
