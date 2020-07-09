@@ -25,6 +25,7 @@ from qgis.core import QgsProcessingUtils
 from qgis.core import QgsVectorFileWriter
 from qgis.core import QgsProcessingParameterString
 from qgis.core import QgsProcessingParameterBoolean
+from qgis.core import QgsProcessingParameterFile
 
 
 class SDNAAlgorithm(QgsProcessingAlgorithm):
@@ -59,13 +60,11 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 # self.addOutput(OutputVector(varname, self.tr(displayname)))
                 # self.addOutput(OutputVector(varname, self.tr(displayname)))
             elif datatype == "InFile":
-                pass
+                print("INFILE:", varname, self.tr(displayname), f"filter={filter}")
                 # self.addParameter(ParameterFile(varname, self.tr(displayname), False, not required, filter))
                 # self.addParameter(ParameterFile(varname, self.tr(displayname), False, not required, filter))
             elif datatype == "MultiInFile":
-                pass
-                # self.addParameter(ParameterFile(varname, self.tr(displayname), ParameterMultipleInput.TYPE_FILE, not required))
-                # self.addParameter(ParameterFile(varname, self.tr(displayname), ParameterMultipleInput.TYPE_FILE, not required))
+                self.addParameter(QgsProcessingParameterFile(varname, self.tr(displayname), QgsProcessingParameterFile.File, optional=not required))
             elif datatype == "OutFile":
                 pass
                 # self.addOutput(OutputFile(varname, self.tr(displayname), filter))
@@ -79,7 +78,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 # self.addParameter(ParameterString(varname, self.tr(displayname + " (field names separated by commas)"), default, False, not required))
                 # self.addParameter(ParameterString(varname, self.tr(displayname + " (field names separated by commas)"), default, False, not required))
             elif datatype == "Bool":
-                # self.addParameter(ParameterBoolean(varname, self.tr(displayname), default))
                 self.addParameter(QgsProcessingParameterBoolean(varname, self.tr(displayname), default))
             elif datatype == "Text":
                 if filter:
@@ -87,7 +85,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     # self.addParameter(ParameterSelection(varname, self.tr(displayname), filter))
                     # self.selectvaroptions[varname] = filter
                 else:
-                    # self.addParameter(ParameterString(varname, self.tr(displayname), default, False, not required))
                     self.addParameter(QgsProcessingParameterString(varname, self.tr(displayname), default, False, not required))
             else:
                 raise Exception(f"Unrecognized parameter type: '{datatype}'")  # TODO: Raise this exception
