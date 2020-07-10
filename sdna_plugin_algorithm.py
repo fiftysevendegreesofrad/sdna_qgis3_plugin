@@ -260,6 +260,9 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         """The group ID of this algorithm. Should not be localised."""
         return self.algorithm_spec.category
 
+    def shortHelpString(self):
+        return f"{self.algorithm_spec.desc}"
+
     @staticmethod
     def tr(string):
         return QCoreApplication.translate("Processing", string)
