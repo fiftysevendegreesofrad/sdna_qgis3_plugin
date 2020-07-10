@@ -19,32 +19,32 @@ __copyright__ = "(C) 2020 Cardiff University"
 
 __revision__ = "$Format:%H$"
 
-from PyQt5.QtCore import QMetaType
-from PyQt5.QtCore import QVariant
+import os
+import sys
 
+from PyQt5.QtCore import QVariant
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import QgsProcessingAlgorithm
-from qgis.core import QgsProcessingUtils
-from qgis.core import QgsVectorFileWriter
 from qgis.core import QgsMessageLog
-from qgis.core import QgsProcessingParameterString
-from qgis.core import QgsProcessingParameterBoolean
-from qgis.core import QgsProcessingParameterFile
-from qgis.core import QgsProcessingOutputVectorLayer
+from qgis.core import QgsProcessingAlgorithm
 from qgis.core import QgsProcessingOutputFile
-from qgis.core import QgsProcessingParameterField
-from qgis.core import QgsProcessingParameterVectorLayer
+from qgis.core import QgsProcessingOutputVectorLayer
+from qgis.core import QgsProcessingParameterBoolean
 from qgis.core import QgsProcessingParameterEnum
+from qgis.core import QgsProcessingParameterField
+from qgis.core import QgsProcessingParameterFile
+from qgis.core import QgsProcessingParameterString
+from qgis.core import QgsProcessingParameterVectorLayer
 
 
 class SDNAAlgorithm(QgsProcessingAlgorithm):
 
-    def __init__(self, algorithm_spec):
+    def __init__(self, algorithm_spec, sdna_path):
         QgsProcessingAlgorithm.__init__(self)
         self.outputs = []
         self.varnames = []
         self.outputnames = []
         self.selectvaroptions = {}
+        self.sdna_path = sdna_path
         self.algorithm_spec = algorithm_spec
 
     def initAlgorithm(self, config):
@@ -68,35 +68,83 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 self.varnames += [varname]
 
             if datatype == "FC":
+                # TODO: Use filter?
                 # print("FC:", varname, self.tr(displayname), f"filter={filter}")
-                self.addParameter(QgsProcessingParameterVectorLayer(varname, self.tr(displayname), types=[sdna_to_qgis_vectortype[filter]], optional=not required))
+                self.addParameter(QgsProcessingParameterVectorLayer(
+                    varname,
+                    self.tr(displayname),
+                    types=[sdna_to_qgis_vectortype[filter]],
+                    optional=not required
+                ))
             elif datatype == "OFC":
                 output = QgsProcessingOutputVectorLayer(varname, self.tr(displayname))
                 self.outputs.append(output)
                 self.addOutput(output)
             elif datatype == "InFile":
+                # TODO: Use filter?
                 # print("INFILE:", varname, self.tr(displayname), f"filter={filter}")
-                self.addParameter(QgsProcessingParameterFile(varname, self.tr(displayname), behavior=QgsProcessingParameterFile.File, optional=not required, fileFilter=filter))
+                self.addParameter(QgsProcessingParameterFile(
+                    varname,
+                    self.tr(displayname),
+                    behavior=QgsProcessingParameterFile.File,
+                    fileFilter=filter,
+                    optional=not required
+                ))
             elif datatype == "MultiInFile":
-                self.addParameter(QgsProcessingParameterFile(varname, self.tr(displayname), behavior=QgsProcessingParameterFile.File, optional=not required))
+                self.addParameter(QgsProcessingParameterFile(
+                    varname,
+                    self.tr(displayname),
+                    behavior=QgsProcessingParameterFile.File,
+                    optional=not required
+                ))
             elif datatype == "OutFile":
+                # TODO: Use filter?
                 # print("OUTFILE:", varname, self.tr(displayname), f"filter={filter}")
                 output = QgsProcessingOutputFile(varname, self.tr(displayname))
                 self.outputs.append(output)
                 self.addOutput(output)
             elif datatype == "Field":
                 fieldtype, source = filter
-                self.addParameter(QgsProcessingParameterField(varname, self.tr(displayname), parentLayerParameterName=source, type=sdna_to_qgis_fieldtype[fieldtype], optional=not required))
+                self.addParameter(QgsProcessingParameterField(
+                    varname,
+                    self.tr(displayname),
+                    parentLayerParameterName=source,
+                    type=sdna_to_qgis_fieldtype[fieldtype],
+                    optional=not required
+                ))
             elif datatype == "MultiField":
-                self.addParameter(QgsProcessingParameterString(varname, self.tr(displayname) + " (field names separated by commas)", defaultValue=default, multiLine=False, optional=not required))
+                self.addParameter(QgsProcessingParameterString(
+                    varname,
+                    f"{self.tr(displayname)} (field names separated by commas)",
+                    defaultValue=default,
+                    multiLine=False,
+                    optional=not required
+                ))
             elif datatype == "Bool":
-                self.addParameter(QgsProcessingParameterBoolean(varname, self.tr(displayname), default))
+                self.addParameter(QgsProcessingParameterBoolean(
+                    varname,
+                    self.tr(displayname),
+                    defaultValue=default,
+                    optional=not required
+                ))
             elif datatype == "Text":
                 if filter:
-                    self.addParameter(QgsProcessingParameterEnum(varname, self.tr(displayname), options=filter, defaultValue=0, optional=not required))
+                    self.addParameter(QgsProcessingParameterEnum(
+                        varname,
+                        self.tr(displayname),
+                        options=filter,
+                        defaultValue=0,
+                        optional=not required
+                    ))
                     self.selectvaroptions[varname] = filter
                 else:
-                    self.addParameter(QgsProcessingParameterString(varname, self.tr(displayname), defaultValue=default, multiLine=False, optional=not required))
+                    self.addParameter(QgsProcessingParameterString(
+                        varname,
+                        self.tr(displayname),
+                        defaultValue=default,
+                        multiLine=False,
+                        optional=not required
+                    ))
             else:
                 raise Exception(f"Unrecognized parameter type: '{datatype}'")
 
@@ -115,7 +163,10 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         print(syntax)
         QgsMessageLog.logMessage(f"syntax: {syntax}", "sDNA")
 
-        self.issue_sdna_command(syntax)
+        retval = self.issue_sdna_command(syntax)
+        if retval != 0:
+            print("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
+            # progress.setInfo("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
 
         return {}
 
@@ -176,8 +227,22 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         return syntax
 
     def issue_sdna_command(self, syntax):
-        # TODO: Issue the command
-        pass
+        pythonexe, pythonpath = self.get_qgis_python_installation()
+        print()
+        print(f"Python:\n\texe={pythonexe};\n\tpath={pythonpath}")
+        print(f"sDNA Command:\n\tsyntax={syntax}\n\tsdna_path={self.sdna_path}")
+        # return self.provider.runsdnacommand(syntax, self.sdna_path, progress, pythonexe, pythonpath)
+        return 0
+
+    def get_qgis_python_installation(self):
+        qgisbase = os.path.dirname(os.path.dirname(sys.executable))
+        pythonexe = os.path.join(qgisbase, "bin", "python3.exe")
+        pythonbase = os.path.join(qgisbase, "apps", "python27")
+        pythonpath = ";".join([os.path.join(pythonbase, x) for x in ["", "Lib", "Lib/site-packages"]])
+        print()
+        print(f"qgisbase={qgisbase}")
+        print(f"pythonpath={pythonpath}")
+        return pythonexe, pythonpath
 
     def name(self):
         """The name of this algorithm. Should not be localised."""
@@ -200,4 +265,4 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         return QCoreApplication.translate("Processing", string)
 
     def createInstance(self):
-        return SDNAAlgorithm(self.algorithm_spec)
+        return SDNAAlgorithm(self.algorithm_spec, self.sdna_path)
