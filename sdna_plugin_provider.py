@@ -26,26 +26,38 @@ from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QMessageBox
 from qgis.core import QgsMessageLog
 from qgis.core import QgsProcessingProvider
+from qgis.core import QgsSettings
+
+from processing.core.ProcessingConfig import Setting
+from processing.core.ProcessingConfig import ProcessingConfig
 
 from .sdna_plugin_algorithm import SDNAAlgorithm
 
 
 class SDNAPluginProvider(QgsProcessingProvider):
 
-    # SDNA_FOLDER_SETTING = "SDNA_FOLDER_SETTING"
+    SDNA_FOLDER_SETTING = "SDNA_FOLDER_SETTING"
 
     def __init__(self):
         self.sdna_path = None
         self.run_sdna_command = None
         self.sdna_algorithm_spec_classes = None
         QgsProcessingProvider.__init__(self)
+        self.configure_settings()
         self.import_sdna_library()
 
+    def configure_settings(self):
+        ProcessingConfig.addSetting(Setting(
+            self.longName(),
+            SDNAPluginProvider.SDNA_FOLDER_SETTING,
+            self.tr("sDNA installation folder"),
+            "c:\\Program Files (x86)\\sDNA",
+            valuetype=Setting.FOLDER
+        ))
+        ProcessingConfig.readSettings()
+
     def import_sdna_library(self):
-        # sdna_root_dir = ProcessingConfig.getSetting(SDNA_FOLDER_SETTING)
-        # sdna_root_dir = "/Users/jeff/Programming/Work/sDNA/sdna_open/arcscripts"
-        # sdna_root_dir = "c:\\Program Files (x86)\\sDNA"
-        sdna_root_dir = "C:\\Users\\Jeffrey Morgan\\Programming\\sDNA\\python3\\sdna_open_python3\\arcscripts"
+        sdna_root_dir = ProcessingConfig.getSetting(SDNAPluginProvider.SDNA_FOLDER_SETTING)
         self.sdna_path = '"' + os.path.join(sdna_root_dir, "bin") + '"'
         QgsMessageLog.logMessage(f"sDNA root: {sdna_root_dir}", "sDNA")
         if sdna_root_dir not in sys.path:
@@ -60,31 +72,27 @@ class SDNAPluginProvider(QgsProcessingProvider):
             QgsMessageLog.logMessage(str(e), "sDNA")
             self.show_install_sdna_message()
 
-    @staticmethod
-    def show_install_sdna_message():
+    def show_install_sdna_message(self):
         QMessageBox.critical(
             QDialog(),
             "sDNA: Error",
             (
                 "Please ensure sDNA version 3.0 or later is installed ensure"
                 "the sDNA installation folder is set correctly in"
-                "Processing -> Options -> Providers -> Spatial Design Network Analysis"
+                f"Processing -> Options -> Providers -> {self.longName()}"
             )
         )
 
     def unload(self):
-        """
-        Unloads the provider. Any tear-down steps required by the provider
-        should be implemented here.
-        """
-        pass
+        ProcessingConfig.removeSetting(SDNAPluginProvider.SDNA_FOLDER_SETTING)
 
     def loadAlgorithms(self):
         """Load all of the algorithms belonging to this provider."""
-        for sdna_algorithm_spec_class in self.sdna_algorithm_spec_classes:
-            sdna_algorithm_spec = sdna_algorithm_spec_class()
-            sdna_algorithm = SDNAAlgorithm(sdna_algorithm_spec)
-            self.addAlgorithm(sdna_algorithm)
+        if self.sdna_algorithm_spec_classes:
+            for sdna_algorithm_spec_class in self.sdna_algorithm_spec_classes:
+                sdna_algorithm_spec = sdna_algorithm_spec_class()
+                sdna_algorithm = SDNAAlgorithm(sdna_algorithm_spec)
+                self.addAlgorithm(sdna_algorithm)
 
     def id(self):
         """The unique provider id. Should not be localised."""
