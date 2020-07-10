@@ -48,10 +48,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         self.algorithm_spec = algorithm_spec
 
     def initAlgorithm(self, config):
-        """
-        Here we define the inputs and output of the algorithm, along
-        with some other properties.
-        """
+        """Set up the algorithm, add the parameters, etc."""
         # print(config)
 
         sdna_to_qgis_vectortype = {
@@ -124,6 +121,8 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
     def extract_args(self, parameters, context):
         args = {}
+
+        # TODO: This does not work yet
         for outname, output in zip(self.outputnames, self.outputs):
             print(f"outname={outname}; output={output}")
             if hasattr(output, "getCompatibleFileName"):
@@ -133,15 +132,16 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
             else:
                 print(f"Invalid output type {output}")
                 # raise Exception(f"Invalid output type {output}")
+
         for vn in self.varnames:
             value = parameters[vn]
-            value = None if type(value) == QVariant and value.isNull() else value
+            value = None if type(value) == QVariant and value.isNull() else value  # Convert Qt's NULL into Python's None
             args[vn] = value
-            print(f"{vn}: {args[vn]} ({type(args[vn])})")
             if vn in self.selectvaroptions:
                 args[vn] = self.selectvaroptions[vn][args[vn]]
             if args[vn] is None:
                 args[vn] = ""
+            # print(f"{vn}: {args[vn]} ({type(args[vn])})")
 
         args["input"] = "dummy"  # TODO: Temporary to move things along
         args["output"] = "dummy"  # TODO: Temporary to move things along
@@ -176,40 +176,23 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         return syntax
 
     def issue_sdna_command(self, syntax):
+        # TODO: Issue the command
         pass
 
     def name(self):
-        """
-        Returns the algorithm name, used for identifying the algorithm. This
-        string should be fixed for the algorithm, and must not be localised.
-        The name should be unique within each provider. Names should contain
-        lowercase alphanumeric characters only and no spaces or other
-        formatting characters.
-        """
+        """The name of this algorithm. Should not be localised."""
         return self.algorithm_spec.alias
 
     def displayName(self):
-        """
-        Returns the translated algorithm name, which should be used for any
-        user-visible display of the algorithm name.
-        """
+        """The name of the algorithm in the UI. Should be localised."""
         return self.tr(self.name())
 
     def group(self):
-        """
-        Returns the name of the group this algorithm belongs to. This string
-        should be localised.
-        """
+        """The name of the algorithm's disclosure group in the UI. Should be localised."""
         return self.tr(self.groupId())
 
     def groupId(self):
-        """
-        Returns the unique ID of the group this algorithm belongs to. This
-        string should be fixed for the algorithm, and must not be localised.
-        The group id should be unique within each provider. Group id should
-        contain lowercase alphanumeric characters only and no spaces or other
-        formatting characters.
-        """
+        """The group ID of this algorithm. Should not be localised."""
         return self.algorithm_spec.category
 
     @staticmethod

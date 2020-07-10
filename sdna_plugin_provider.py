@@ -59,7 +59,8 @@ class SDNAPluginProvider(QgsProcessingProvider):
             QgsMessageLog.logMessage(str(e), "sDNA")
             self.show_install_sdna_message()
 
-    def show_install_sdna_message(self):
+    @staticmethod
+    def show_install_sdna_message():
         QMessageBox.critical(
             QDialog(),
             "sDNA: Error",
@@ -78,41 +79,24 @@ class SDNAPluginProvider(QgsProcessingProvider):
         pass
 
     def loadAlgorithms(self):
-        """
-        Loads all algorithms belonging to this provider.
-        """
+        """Load all of the algorithms belonging to this provider."""
         for sdna_algorithm_spec_class in self.sdna_algorithm_spec_classes:
             sdna_algorithm_spec = sdna_algorithm_spec_class()
             sdna_algorithm = SDNAAlgorithm(sdna_algorithm_spec)
             self.addAlgorithm(sdna_algorithm)
 
     def id(self):
-        """
-        Returns the unique provider id, used for identifying the provider. This
-        string should be a unique, short, character only string, eg "qgis" or
-        "gdal". This string should not be localised.
-        """
+        """The unique provider id. Should not be localised."""
         return "sDNA Provider"
 
     def name(self):
-        """
-        Returns the provider name, which is used to describe the provider
-        within the GUI.
-        """
+        """The short name of this provider. Should be localised."""
         return self.tr("sDNA")
 
     def icon(self):
-        """
-        Should return a QIcon which is used for your provider inside
-        the Processing toolbox.
-        """
+        """The QIcon for the provider inside the Processing toolbox."""
         return QgsProcessingProvider.icon(self)
 
     def longName(self):
-        """
-        Returns the a longer version of the provider name, which can include
-        extra details such as version numbers. E.g. "Lastools LIDAR tools
-        (version 2.2.1)". This string should be localised. The default
-        implementation returns the same string as name().
-        """
+        """The longer name of this provider. Should be localised."""
         return self.tr("Spatial Design Network Analysis")
