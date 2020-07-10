@@ -43,8 +43,9 @@ class SDNAPluginProvider(QgsProcessingProvider):
 
     def import_sdna_library(self):
         # sdna_root_dir = ProcessingConfig.getSetting(SDNA_FOLDER_SETTING)
-        sdna_root_dir = "/Users/jeff/Programming/Work/sDNA/sdna_open/arcscripts"
+        # sdna_root_dir = "/Users/jeff/Programming/Work/sDNA/sdna_open/arcscripts"
         # sdna_root_dir = "c:\\Program Files (x86)\\sDNA"
+        sdna_root_dir = "C:\\Users\\Jeffrey Morgan\\Programming\\sDNA\\python3\\sdna_open_python3\\arcscripts"
         self.sdna_path = '"' + os.path.join(sdna_root_dir, "bin") + '"'
         QgsMessageLog.logMessage(f"sDNA root: {sdna_root_dir}", "sDNA")
         if sdna_root_dir not in sys.path:
