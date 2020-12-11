@@ -21,6 +21,7 @@ __revision__ = "$Format:%H$"
 
 import os
 import sys
+import tempfile
 
 from PyQt5.QtCore import QVariant
 from qgis.PyQt.QtCore import QCoreApplication
@@ -34,6 +35,8 @@ from qgis.core import QgsProcessingParameterField
 from qgis.core import QgsProcessingParameterFile
 from qgis.core import QgsProcessingParameterString
 from qgis.core import QgsProcessingParameterVectorLayer
+from qgis.core import QgsVectorFileWriter
+from qgis.core import QgsProcessingUtils
 
 
 class SDNAAlgorithm(QgsProcessingAlgorithm):
@@ -68,35 +71,37 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 self.varnames += [varname]
 
             if datatype == "FC":
-                # TODO: Use filter?
-                # print("FC:", varname, self.tr(displayname), f"filter={filter}")
-                self.addParameter(QgsProcessingParameterVectorLayer(
-                    varname,
-                    self.tr(displayname),
-                    types=[sdna_to_qgis_vectortype[filter]],
-                    optional=not required
-                ))
+                self.addParameter(
+                    QgsProcessingParameterVectorLayer(
+                        varname,
+                        self.tr(displayname),
+                        types=[sdna_to_qgis_vectortype[filter]],
+                        optional=not required
+                    )
+                )
             elif datatype == "OFC":
                 output = QgsProcessingOutputVectorLayer(varname, self.tr(displayname))
                 self.outputs.append(output)
                 self.addOutput(output)
             elif datatype == "InFile":
-                # TODO: Use filter?
-                # print("INFILE:", varname, self.tr(displayname), f"filter={filter}")
-                self.addParameter(QgsProcessingParameterFile(
-                    varname,
-                    self.tr(displayname),
-                    behavior=QgsProcessingParameterFile.File,
-                    fileFilter=filter,
-                    optional=not required
-                ))
+                self.addParameter(
+                    QgsProcessingParameterFile(
+                        varname,
+                        self.tr(displayname),
+                        behavior=QgsProcessingParameterFile.File,
+                        fileFilter=filter,
+                        optional=not required
+                    )
+                )
             elif datatype == "MultiInFile":
-                self.addParameter(QgsProcessingParameterFile(
-                    varname,
-                    self.tr(displayname),
-                    behavior=QgsProcessingParameterFile.File,
-                    optional=not required
-                ))
+                self.addParameter(
+                    QgsProcessingParameterFile(
+                        varname,
+                        self.tr(displayname),
+                        behavior=QgsProcessingParameterFile.File,
+                        optional=not required
+                    )
+                )
             elif datatype == "OutFile":
                 # TODO: Use filter?
                 # print("OUTFILE:", varname, self.tr(displayname), f"filter={filter}")
@@ -105,46 +110,56 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 self.addOutput(output)
             elif datatype == "Field":
                 fieldtype, source = filter
-                self.addParameter(QgsProcessingParameterField(
-                    varname,
-                    self.tr(displayname),
-                    parentLayerParameterName=source,
-                    type=sdna_to_qgis_fieldtype[fieldtype],
-                    optional=not required
-                ))
-            elif datatype == "MultiField":
-                self.addParameter(QgsProcessingParameterString(
-                    varname,
-                    f"{self.tr(displayname)} (field names separated by commas)",
-                    defaultValue=default,
-                    multiLine=False,
-                    optional=not required
-                ))
-            elif datatype == "Bool":
-                self.addParameter(QgsProcessingParameterBoolean(
-                    varname,
-                    self.tr(displayname),
-                    defaultValue=default,
-                    optional=not required
-                ))
-            elif datatype == "Text":
-                if filter:
-                    self.addParameter(QgsProcessingParameterEnum(
+                self.addParameter(
+                    QgsProcessingParameterField(
                         varname,
                         self.tr(displayname),
-                        options=filter,
-                        defaultValue=0,
+                        parentLayerParameterName=source,
+                        type=sdna_to_qgis_fieldtype[fieldtype],
                         optional=not required
-                    ))
-                    self.selectvaroptions[varname] = filter
-                else:
-                    self.addParameter(QgsProcessingParameterString(
+                    )
+                )
+            elif datatype == "MultiField":
+                self.addParameter(
+                    QgsProcessingParameterString(
                         varname,
-                        self.tr(displayname),
+                        f"{self.tr(displayname)} (field names separated by commas)",
                         defaultValue=default,
                         multiLine=False,
                         optional=not required
-                    ))
+                    )
+                )
+            elif datatype == "Bool":
+                self.addParameter(
+                    QgsProcessingParameterBoolean(
+                        varname,
+                        self.tr(displayname),
+                        defaultValue=default,
+                        optional=not required
+                    )
+                )
+            elif datatype == "Text":
+                if filter:
+                    self.addParameter(
+                        QgsProcessingParameterEnum(
+                            varname,
+                            self.tr(displayname),
+                            options=filter,
+                            defaultValue=0,
+                            optional=not required
+                        )
+                    )
+                    self.selectvaroptions[varname] = filter
+                else:
+                    self.addParameter(
+                        QgsProcessingParameterString(
+                            varname,
+                            self.tr(displayname),
+                            defaultValue=default,
+                            multiLine=False,
+                            optional=not required
+                        )
+                    )
             else:
                 raise Exception(f"Unrecognized parameter type: '{datatype}'")
 
@@ -159,13 +174,14 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         print(args)
         QgsMessageLog.logMessage(f"args: {args}", "sDNA")
 
-        syntax = self.extract_syntax(args)
+        syntax = self.extract_syntax(args, context, feedback)
         print(syntax)
         QgsMessageLog.logMessage(f"syntax: {syntax}", "sDNA")
 
         retval = self.issue_sdna_command(syntax)
         if retval != 0:
             print("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
+            feedback.setProgressText("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
             # progress.setInfo("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
 
         return {}
@@ -199,28 +215,30 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
         return args
 
-    def extract_syntax(self, args):
+    def extract_syntax(self, args, context, feedback):
         syntax = self.algorithm_spec.getSyntax(args)
         # convert inputs to shapefiles if necessary, renaming in syntax as appropriate
         converted_inputs = {}
+        print("syntax items:", syntax["inputs"])
         for name, path in syntax["inputs"].items():
             if path:
                 # convert inputs to shapefiles if they aren't already shp or csv
                 # do this by hand rather than using dataobjects.exportVectorLayer(processing.getObject(path))
                 # as we want to ignore selection if present
                 if path[-4:].lower() not in [".shp", ".csv"]:
-                    pass  # TODO: Pass for now
-                    # progress.setInfo(f"Converting input to shapefile: {path}")
-                    # tempfile = system.getTempFilename("shp")
-                    # ret = QgsVectorFileWriter.writeAsVectorFormat(
-                    #     processing.getObject(path),
-                    #     tempfile,
-                    #     "utf-8",
-                    #     None,
-                    #     "ESRI Shapefile"
-                    # )
-                    # assert ret == QgsVectorFileWriter.NoError
-                    # converted_inputs[name] = tempfile
+                    feedback.setProgressText(f"Converting input to shapefile: {path}")
+                    with tempfile.TemporaryDirectory() as tmp:
+                        temporary_file = os.path.join(tmp, "shp")
+                        print(f"temporary_file={temporary_file}")
+                        ret = QgsVectorFileWriter.writeAsVectorFormat(
+                            QgsProcessingUtils.mapLayerFromString(path, context, allowLoadingNewLayers=True),
+                            temporary_file,
+                            "utf-8",
+                            None,
+                            "ESRI Shapefile"
+                        )
+                        assert ret == QgsVectorFileWriter.NoError
+                        converted_inputs[name] = tempfile
                 else:
                     converted_inputs[name] = path
         syntax["inputs"] = converted_inputs
