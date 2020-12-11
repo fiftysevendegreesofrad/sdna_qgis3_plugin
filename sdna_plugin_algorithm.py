@@ -221,7 +221,8 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         converted_inputs = {}
         print("syntax items:", syntax["inputs"])
         for name, path in syntax["inputs"].items():
-            if path:
+            QgsMessageLog.logMessage(f"path:{path}", "sDNA")
+            if path and path != "dummy":
                 # convert inputs to shapefiles if they aren't already shp or csv
                 # do this by hand rather than using dataobjects.exportVectorLayer(processing.getObject(path))
                 # as we want to ignore selection if present
