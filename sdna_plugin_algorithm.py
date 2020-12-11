@@ -41,13 +41,14 @@ from qgis.core import QgsProcessingUtils
 
 class SDNAAlgorithm(QgsProcessingAlgorithm):
 
-    def __init__(self, algorithm_spec, sdna_path):
+    def __init__(self, algorithm_spec, sdna_path, run_sdna_command):
         QgsProcessingAlgorithm.__init__(self)
         self.outputs = []
         self.varnames = []
         self.outputnames = []
         self.selectvaroptions = {}
         self.sdna_path = sdna_path
+        self.run_sdna_command = run_sdna_command
         self.algorithm_spec = algorithm_spec
 
     def initAlgorithm(self, config):
@@ -178,7 +179,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         print(syntax)
         QgsMessageLog.logMessage(f"syntax: {syntax}", "sDNA")
 
-        retval = self.issue_sdna_command(syntax)
+        retval = self.issue_sdna_command(syntax, feedback)
         if retval != 0:
             print("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
             feedback.setProgressText("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
@@ -245,13 +246,15 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         syntax["inputs"] = converted_inputs
         return syntax
 
-    def issue_sdna_command(self, syntax):
+    def issue_sdna_command(self, syntax, feedback):
         pythonexe, pythonpath = self.get_qgis_python_installation()
         print()
         print(f"Python:\n\texe={pythonexe};\n\tpath={pythonpath}")
         print(f"sDNA Command:\n\tsyntax={syntax}\n\tsdna_path={self.sdna_path}")
-        # return self.provider.runsdnacommand(syntax, self.sdna_path, progress, pythonexe, pythonpath)
-        return 0
+        sdna_command_path = self.sdna_path[:-5]
+        print(f"sdna_command_path", sdna_command_path)
+        return self.run_sdna_command(syntax, self.sdna_path, feedback, pythonexe, pythonpath)
+        # return 0
 
     def get_qgis_python_installation(self):
         qgisbase = os.path.dirname(os.path.dirname(sys.executable))
@@ -287,4 +290,4 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         return QCoreApplication.translate("Processing", string)
 
     def createInstance(self):
-        return SDNAAlgorithm(self.algorithm_spec, self.sdna_path)
+        return SDNAAlgorithm(self.algorithm_spec, self.sdna_path, self.run_sdna_command)

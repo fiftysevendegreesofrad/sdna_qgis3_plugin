@@ -91,7 +91,7 @@ class SDNAPluginProvider(QgsProcessingProvider):
         if self.sdna_algorithm_spec_classes:
             for sdna_algorithm_spec_class in self.sdna_algorithm_spec_classes:
                 sdna_algorithm_spec = sdna_algorithm_spec_class()
-                sdna_algorithm = SDNAAlgorithm(sdna_algorithm_spec, self.sdna_path)
+                sdna_algorithm = SDNAAlgorithm(sdna_algorithm_spec, self.sdna_path, self.run_sdna_command)
                 self.addAlgorithm(sdna_algorithm)
 
     def id(self):
