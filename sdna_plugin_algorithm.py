@@ -53,11 +53,13 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
     def initAlgorithm(self, config):
         """Set up the algorithm, add the parameters, etc."""
-        # print(config)
 
+        # TODO: 0 and None are temporary values that need replacing
         sdna_to_qgis_vectortype = {
-            "Polyline": 0,  # TODO: ParameterVector.VECTOR_TYPE_LINE,
-            None: 1  # TODO: ParameterVector.VECTOR_TYPE_ANY
+            # TODO: I can't find the documentation for this: ParameterVector.VECTOR_TYPE_LINE
+            "Polyline": 0,
+            # TODO: I can't find the documentation for this: ParameterVector.VECTOR_TYPE_ANY
+            None: 1  
         }
         sdna_to_qgis_fieldtype = {
             "Numeric": QgsProcessingParameterField.DataType.Numeric,
@@ -65,7 +67,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         }
 
         for varname, displayname, datatype, filter, default, required in self.algorithm_spec.getInputSpec():
-            # print(varname, displayname, datatype, filter, default, required)
             if datatype == "OFC" or datatype == "OutFile":
                 self.outputnames += [varname]
             else:
@@ -104,8 +105,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "OutFile":
-                # TODO: Use filter?
-                # print("OUTFILE:", varname, self.tr(displayname), f"filter={filter}")
                 output = QgsProcessingOutputFile(varname, self.tr(displayname))
                 self.outputs.append(output)
                 self.addOutput(output)
@@ -169,7 +168,12 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
 
-        # TODO: Warn user that selections are ignored
+        # TODO: There is no ProcessingConfig.USE_SELECTED
+        # if ProcessingConfig.getSetting(ProcessingConfig.USE_SELECTED):
+        if false:  # TODO: A placeholder for the fix for the above line
+            feedback.setProgressText("**********************************************************************\n"\
+                                    "WARNING: sDNA ignores your selection and will process the entire layer\n"\
+                                    "**********************************************************************")
 
         args = self.extract_args(parameters, context)
         print(args)
@@ -181,9 +185,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
         retval = self.issue_sdna_command(syntax, feedback)
         if retval != 0:
-            print("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
-            feedback.setProgressText("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
-            # progress.setInfo("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
+            QgsMessageLog.logMessage("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
 
         return {}
 
@@ -193,13 +195,14 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         # TODO: This does not work yet
         for outname, output in zip(self.outputnames, self.outputs):
             print(f"outname={outname}; output={output}")
+            # TODO: What is the equivalent for of getCompatibleFileName in QGIS3? Seems undocumented.
             if hasattr(output, "getCompatibleFileName"):
                 args[outname] = output.getCompatibleFileName(self)
+            # TODO: What is the equivalent for of getValueAsCommandLineParameter in QGIS3? Seems undocumented.
             elif hasattr(output, "getValueAsCommandLineParameter"):
                 args[outname] = output.getValueAsCommandLineParameter().replace('"', '')  # strip quotes - sdna adds them again
             else:
-                print(f"Invalid output type {output}")
-                # raise Exception(f"Invalid output type {output}")
+                QgsMessageLog.logMessage(f"ERROR: Invalid output type {output}")
 
         for vn in self.varnames:
             value = parameters[vn]
@@ -231,11 +234,13 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     feedback.setProgressText(f"Converting input to shapefile: {path}")
                     with tempfile.TemporaryDirectory() as tmp:
                         temporary_file = os.path.join(tmp, "shp")
-                        print(f"temporary_file={temporary_file}")
                         ret = QgsVectorFileWriter.writeAsVectorFormat(
                             QgsProcessingUtils.mapLayerFromString(path, context, allowLoadingNewLayers=True),
                             temporary_file,
                             "utf-8",
+                            # TODO: None is not a valid value here. However this documentation says to use
+                            # an "invalid CRS for no reprojection". What should we use here? What is invalid?
+                            # https://qgis.org/pyqgis/3.14/core/QgsVectorFileWriter.html?highlight=qgsvectorfilewriter#qgis.core.QgsVectorFileWriter.writeAsVectorFormat
                             None,
                             "ESRI Shapefile"
                         )
@@ -254,7 +259,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         sdna_command_path = self.sdna_path[:-5]
         print(f"sdna_command_path", sdna_command_path)
         return self.run_sdna_command(syntax, self.sdna_path, feedback, pythonexe, pythonpath)
-        # return 0
 
     def get_qgis_python_installation(self):
         qgisbase = os.path.dirname(os.path.dirname(sys.executable))
