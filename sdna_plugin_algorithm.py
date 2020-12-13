@@ -192,7 +192,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
     def extract_args(self, parameters, context):
         args = {}
 
-        # TODO: This does not work yet
+        # TODO: Find equivalents for the undocumented methods below
         for outname, output in zip(self.outputnames, self.outputs):
             print(f"outname={outname}; output={output}")
             # TODO: What is the equivalent for of getCompatibleFileName in QGIS3? Seems undocumented.
