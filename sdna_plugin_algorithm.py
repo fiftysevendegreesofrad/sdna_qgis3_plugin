@@ -26,6 +26,7 @@ import tempfile
 from PyQt5.QtCore import QVariant
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsMessageLog
+from qgis.core import QgsProcessing
 from qgis.core import QgsProcessingAlgorithm
 from qgis.core import QgsProcessingOutputFile
 from qgis.core import QgsProcessingOutputVectorLayer
@@ -54,12 +55,9 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
     def initAlgorithm(self, config):
         """Set up the algorithm, add the parameters, etc."""
 
-        # TODO: 0 and None are temporary values that need replacing
         sdna_to_qgis_vectortype = {
-            # TODO: I can't find the documentation for this: ParameterVector.VECTOR_TYPE_LINE
-            "Polyline": 0,
-            # TODO: I can't find the documentation for this: ParameterVector.VECTOR_TYPE_ANY
-            None: 1  
+            "Polyline": QgsProcessing.TypeVectorLine,
+            None: QgsProcessing.TypeVectorAnyGeometry
         }
         sdna_to_qgis_fieldtype = {
             "Numeric": QgsProcessingParameterField.DataType.Numeric,
@@ -168,9 +166,12 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
 
+        QgsMessageLog.logMessage("Parameters:", "sDNA")
+        QgsMessageLog.logMessage(str(parameters), "sDNA")
+
         # TODO: There is no ProcessingConfig.USE_SELECTED
         # if ProcessingConfig.getSetting(ProcessingConfig.USE_SELECTED):
-        if false:  # TODO: A placeholder for the fix for the above line
+        if False:  # TODO: A placeholder for the fix for the above line
             feedback.setProgressText("**********************************************************************\n"\
                                     "WARNING: sDNA ignores your selection and will process the entire layer\n"\
                                     "**********************************************************************")
