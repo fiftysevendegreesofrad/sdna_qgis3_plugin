@@ -222,22 +222,12 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         print("parameters:", parameters)
         print("output:", parameters["output"])
 
-        # TODO: Find equivalents for the undocumented methods below
         for outname, output in zip(self.outputnames, self.outputs):
             print(f"outname={outname}; output={output}")
-
             args[outname] = self.parameterAsFileOutput(parameters, outname, context)
+            # TODO: Do we need to handle command line parameters?
+            # args[outname] = output.getValueAsCommandLineParameter().replace('"', '')  # strip quotes - sdna adds them again
 
-            # # TODO: What is the equivalent for of getCompatibleFileName in QGIS3? Seems undocumented.
-            # if hasattr(output, "getCompatibleFileName"):
-            #     args[outname] = output.getCompatibleFileName(self)
-            # # TODO: What is the equivalent for of getValueAsCommandLineParameter in QGIS3? Seems undocumented.
-            # elif hasattr(output, "getValueAsCommandLineParameter"):
-            #     args[outname] = output.getValueAsCommandLineParameter().replace('"', '')  # strip quotes - sdna adds them again
-            # else:
-            #     QgsMessageLog.logMessage(f"ERROR: Invalid output type {output}", "sDNA")
-
-        # print("\nVARNAMES")
         for vn in self.varnames:
             value = parameters[vn]
             value = None if type(value) == QVariant and value.isNull() else value  # Convert Qt's NULL into Python's None
@@ -255,16 +245,19 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
     def extract_syntax(self, args, context, feedback, source_crs):
         syntax = self.algorithm_spec.getSyntax(args)
+        print("syntax:", syntax)
         # convert inputs to shapefiles if necessary, renaming in syntax as appropriate
         converted_inputs = {}
         print("syntax items:", syntax["inputs"])
         for name, path in syntax["inputs"].items():
-            print(f"extract_syntax() path:{path}")
+            print(f"name={name}; path={path}")
+            print(f"extract_syntax() path:'{path}'")
             if path:
-                # convert inputs to shapefiles if they aren't already shp or csv
-                # do this by hand rather than using dataobjects.exportVectorLayer(processing.getObject(path))
-                # as we want to ignore selection if present
-                if path[-4:].lower() not in [".shp", ".csv"]:
+                _, file_extension = os.path.splitext(path.lower())
+                if file_extension and file_extension not in [".shp", ".csv"]:
+                    # convert inputs to shapefiles if they aren't already shp or csv
+                    # do this by hand rather than using dataobjects.exportVectorLayer(processing.getObject(path))
+                    # as we want to ignore selection if present
                     feedback.setProgressText(f"Converting input to shapefile: {path}")
                     with tempfile.TemporaryDirectory() as tmp:
                         temporary_file = os.path.join(tmp, "shp")
@@ -287,8 +280,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
     def issue_sdna_command(self, syntax, feedback):
         pythonexe, pythonpath = self.get_qgis_python_installation()
-        print()
-        print(f"Python:\n\texe={pythonexe};\n\tpath={pythonpath}")
+        print(f"\nPython:\n\texe={pythonexe};\n\tpath={pythonpath}")
         print(f"sDNA Command:\n\tsyntax={syntax}\n\tsdna_path={self.sdna_path}")
         sdna_command_path = self.sdna_path[:-5]
         print(f"sdna_command_path", sdna_command_path)
