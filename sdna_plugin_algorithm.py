@@ -184,14 +184,9 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
 
     def processAlgorithm(self, parameters, context, feedback):
-
-        QgsMessageLog.logMessage("Parameters:", "sDNA")
-        QgsMessageLog.logMessage(str(parameters), "sDNA")
-
         # 'input' is the name of the sDNA variable for the input layer
         source = self.parameterAsSource(parameters, 'input', context)
         source_crs = source.sourceCrs()
-        QgsMessageLog.logMessage(f"Features: {source.featureCount()}", "sDNA")
 
         # The parameterAsSource method return a QgsProcessingFeatureSource object that
         # operates on all of the features. To issue this warning, we'd need to check
@@ -284,8 +279,9 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         print(f"sDNA Command:\n\tsyntax={syntax}\n\tsdna_path={self.sdna_path}")
         sdna_command_path = self.sdna_path[:-5]
         print(f"sdna_command_path", sdna_command_path)
-        # return self.run_sdna_command(syntax, self.sdna_path, feedback, pythonexe, pythonpath)
-        return 0
+        progress_adapter = ProgressAdaptor(feedback)
+        return self.run_sdna_command(syntax, self.sdna_path, progress_adapter, pythonexe, pythonpath)
+        # return 0
 
     def get_qgis_python_installation(self):
         qgisbase = os.path.dirname(os.path.dirname(sys.executable))
@@ -322,3 +318,16 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return SDNAAlgorithm(self.algorithm_spec, self.sdna_path, self.run_sdna_command)
+
+
+class ProgressAdaptor:
+
+    def __init__(self, feedback):
+        self.feedback = feedback
+
+    def setInfo(self, info):
+        self.feedback.setProgressText(info)
+
+    def setPercentage(self, percentage):
+        self.feedback.setProgress(percentage)
+    
