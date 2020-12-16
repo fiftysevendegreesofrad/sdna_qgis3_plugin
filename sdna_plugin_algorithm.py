@@ -36,6 +36,7 @@ from qgis.core import QgsProcessingParameterField
 from qgis.core import QgsProcessingParameterFile
 from qgis.core import QgsProcessingParameterString
 from qgis.core import QgsProcessingParameterVectorLayer
+from qgis.core import QgsProcessingParameterFeatureSource
 from qgis.core import QgsVectorFileWriter
 from qgis.core import QgsProcessingUtils
 
@@ -65,14 +66,18 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         }
 
         for varname, displayname, datatype, filter, default, required in self.algorithm_spec.getInputSpec():
+
+            # QgsMessageLog.logMessage(f"varname={varname} ('{self.tr(displayname)}') datatype={datatype} required={required}", "sDNA")
+
             if datatype == "OFC" or datatype == "OutFile":
                 self.outputnames += [varname]
             else:
                 self.varnames += [varname]
 
             if datatype == "FC":
+                # QgsMessageLog.logMessage(f"FC Parameter: {varname} '{displayname}'", "sDNA")
                 self.addParameter(
-                    QgsProcessingParameterVectorLayer(
+                    QgsProcessingParameterFeatureSource(
                         varname,
                         self.tr(displayname),
                         types=[sdna_to_qgis_vectortype[filter]],
