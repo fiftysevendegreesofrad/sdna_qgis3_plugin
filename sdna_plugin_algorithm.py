@@ -75,7 +75,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 self.varnames += [varname]
 
             if datatype == "FC":
-                # QgsMessageLog.logMessage(f"FC Parameter: {varname} '{displayname}'", "sDNA")
+                QgsMessageLog.logMessage(f"FC Parameter: {varname} '{displayname}'", "sDNA")
                 self.addParameter(
                     QgsProcessingParameterFeatureSource(
                         varname,
@@ -85,10 +85,12 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "OFC":
+                QgsMessageLog.logMessage(f"OFC Parameter: {varname} '{displayname}'", "sDNA")
                 output = QgsProcessingOutputVectorLayer(varname, self.tr(displayname))
                 self.outputs.append(output)
                 self.addOutput(output)
             elif datatype == "InFile":
+                QgsMessageLog.logMessage(f"InFile Parameter: {varname} '{displayname}'", "sDNA")
                 self.addParameter(
                     QgsProcessingParameterFile(
                         varname,
@@ -99,6 +101,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "MultiInFile":
+                QgsMessageLog.logMessage(f"MultiInFile Parameter: {varname} '{displayname}'", "sDNA")
                 self.addParameter(
                     QgsProcessingParameterFile(
                         varname,
@@ -108,10 +111,12 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "OutFile":
+                QgsMessageLog.logMessage(f"OutFile Parameter: {varname} '{displayname}'", "sDNA")
                 output = QgsProcessingOutputFile(varname, self.tr(displayname))
                 self.outputs.append(output)
                 self.addOutput(output)
             elif datatype == "Field":
+                QgsMessageLog.logMessage(f"Field Parameter: {varname} '{displayname}'", "sDNA")
                 fieldtype, source = filter
                 self.addParameter(
                     QgsProcessingParameterField(
@@ -123,6 +128,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "MultiField":
+                QgsMessageLog.logMessage(f"MultiField Parameter: {varname} '{displayname}'", "sDNA")
                 self.addParameter(
                     QgsProcessingParameterString(
                         varname,
@@ -133,6 +139,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "Bool":
+                QgsMessageLog.logMessage(f"Bool Parameter: {varname} '{displayname}'", "sDNA")
                 self.addParameter(
                     QgsProcessingParameterBoolean(
                         varname,
@@ -142,6 +149,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "Text":
+                QgsMessageLog.logMessage(f"Text Parameter: {varname} '{displayname}'", "sDNA")
                 if filter:
                     self.addParameter(
                         QgsProcessingParameterEnum(
@@ -174,12 +182,21 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         QgsMessageLog.logMessage("Parameters:", "sDNA")
         QgsMessageLog.logMessage(str(parameters), "sDNA")
 
-        # TODO: There is no ProcessingConfig.USE_SELECTED
-        # if ProcessingConfig.getSetting(ProcessingConfig.USE_SELECTED):
-        if False:  # TODO: A placeholder for the fix for the above line
-            feedback.setProgressText("**********************************************************************\n"\
-                                    "WARNING: sDNA ignores your selection and will process the entire layer\n"\
-                                    "**********************************************************************")
+        # 'input' is the name of the sDNA variable for the input layer
+        source = self.parameterAsSource(parameters, 'input', context)
+        QgsMessageLog.logMessage(f"Features: {source.featureCount()}", "sDNA")
+        features = source.getFeatures()
+
+        # The parameterAsSource method return a QgsProcessingFeatureSource object that
+        # operates on all of the features. To issue this warning, we'd need to check
+        # if QGIS has a selection in the active layer, which would be the active
+        # layer when this processing algorithm was invoked. However, when the input 
+        # is chosen by selecting a file the current selection would not be relevant.
+        # https://qgis.org/pyqgis/3.14/core/QgsProcessingFeatureSource.html#module-QgsProcessingFeatureSource
+        #
+        # feedback.setProgressText("**********************************************************************\n"\
+        #                         "WARNING: sDNA ignores your selection and will process the entire layer\n"\
+        #                         "**********************************************************************")
 
         args = self.extract_args(parameters, context)
         print(args)
