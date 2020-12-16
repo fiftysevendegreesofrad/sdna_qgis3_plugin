@@ -37,6 +37,7 @@ from qgis.core import QgsProcessingParameterFile
 from qgis.core import QgsProcessingParameterString
 from qgis.core import QgsProcessingParameterVectorLayer
 from qgis.core import QgsProcessingParameterFeatureSource
+from qgis.core import QgsProcessingParameterFeatureSink
 from qgis.core import QgsVectorFileWriter
 from qgis.core import QgsProcessingUtils
 
@@ -67,7 +68,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
         for varname, displayname, datatype, filter, default, required in self.algorithm_spec.getInputSpec():
 
-            # QgsMessageLog.logMessage(f"varname={varname} ('{self.tr(displayname)}') datatype={datatype} required={required}", "sDNA")
+            # print(f"varname={varname} ('{self.tr(displayname)}') datatype={datatype} required={required}")
 
             if datatype == "OFC" or datatype == "OutFile":
                 self.outputnames += [varname]
@@ -75,7 +76,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 self.varnames += [varname]
 
             if datatype == "FC":
-                QgsMessageLog.logMessage(f"FC Parameter: {varname} '{displayname}'", "sDNA")
+                # print(f"FC Parameter: {varname} '{displayname}'")
                 self.addParameter(
                     QgsProcessingParameterFeatureSource(
                         varname,
@@ -85,12 +86,16 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "OFC":
-                QgsMessageLog.logMessage(f"OFC Parameter: {varname} '{displayname}'", "sDNA")
-                output = QgsProcessingOutputVectorLayer(varname, self.tr(displayname))
+                print(f"OFC Parameter: {varname} '{displayname}'")
+                output = QgsProcessingParameterFeatureSink(
+                    varname,
+                    self.tr(displayname),
+                )
                 self.outputs.append(output)
-                self.addOutput(output)
+                self.addParameter(output)
+                print("OFC output:", output)
             elif datatype == "InFile":
-                QgsMessageLog.logMessage(f"InFile Parameter: {varname} '{displayname}'", "sDNA")
+                # print(f"InFile Parameter: {varname} '{displayname}'")
                 self.addParameter(
                     QgsProcessingParameterFile(
                         varname,
@@ -101,7 +106,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "MultiInFile":
-                QgsMessageLog.logMessage(f"MultiInFile Parameter: {varname} '{displayname}'", "sDNA")
+                # print(f"MultiInFile Parameter: {varname} '{displayname}'")
                 self.addParameter(
                     QgsProcessingParameterFile(
                         varname,
@@ -111,12 +116,12 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "OutFile":
-                QgsMessageLog.logMessage(f"OutFile Parameter: {varname} '{displayname}'", "sDNA")
-                output = QgsProcessingOutputFile(varname, self.tr(displayname))
-                self.outputs.append(output)
-                self.addOutput(output)
+                print(f"OutFile Parameter: {varname} '{displayname}'")
+                # output = QgsProcessingParameterOutputFile(varname, self.tr(displayname))
+                # self.outputs.append(output)
+                # self.addParameter(output)
             elif datatype == "Field":
-                QgsMessageLog.logMessage(f"Field Parameter: {varname} '{displayname}'", "sDNA")
+                # print(f"Field Parameter: {varname} '{displayname}'")
                 fieldtype, source = filter
                 self.addParameter(
                     QgsProcessingParameterField(
@@ -128,7 +133,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "MultiField":
-                QgsMessageLog.logMessage(f"MultiField Parameter: {varname} '{displayname}'", "sDNA")
+                # print(f"MultiField Parameter: {varname} '{displayname}'")
                 self.addParameter(
                     QgsProcessingParameterString(
                         varname,
@@ -139,7 +144,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "Bool":
-                QgsMessageLog.logMessage(f"Bool Parameter: {varname} '{displayname}'", "sDNA")
+                # print(f"Bool Parameter: {varname} '{displayname}'")
                 self.addParameter(
                     QgsProcessingParameterBoolean(
                         varname,
@@ -149,7 +154,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "Text":
-                QgsMessageLog.logMessage(f"Text Parameter: {varname} '{displayname}'", "sDNA")
+                # print(f"Text Parameter: {varname} '{displayname}'")
                 if filter:
                     self.addParameter(
                         QgsProcessingParameterEnum(
@@ -174,8 +179,9 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
             else:
                 raise Exception(f"Unrecognized parameter type: '{datatype}'")
 
-            # print("outputnames:", self.outputnames)
-            # print("varnames:", self.varnames)
+        # print(f"\noutputnames={self.outputnames}")
+        # print(f"varnames={self.varnames}")
+
 
     def processAlgorithm(self, parameters, context, feedback):
 
@@ -184,8 +190,8 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
         # 'input' is the name of the sDNA variable for the input layer
         source = self.parameterAsSource(parameters, 'input', context)
+        source_crs = source.sourceCrs()
         QgsMessageLog.logMessage(f"Features: {source.featureCount()}", "sDNA")
-        features = source.getFeatures()
 
         # The parameterAsSource method return a QgsProcessingFeatureSource object that
         # operates on all of the features. To issue this warning, we'd need to check
@@ -199,34 +205,39 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         #                         "**********************************************************************")
 
         args = self.extract_args(parameters, context)
-        print(args)
-        QgsMessageLog.logMessage(f"args: {args}", "sDNA")
+        print(f"\nargs: {args}")
 
-        syntax = self.extract_syntax(args, context, feedback)
-        print(syntax)
-        QgsMessageLog.logMessage(f"syntax: {syntax}", "sDNA")
+        syntax = self.extract_syntax(args, context, feedback, source_crs)
+        print(f"\nsyntax: {syntax}")
 
         retval = self.issue_sdna_command(syntax, feedback)
         if retval != 0:
-            QgsMessageLog.logMessage("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY")
+            QgsMessageLog.logMessage("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY", "SDNA")
 
         return {}
 
     def extract_args(self, parameters, context):
         args = {}
 
+        print("parameters:", parameters)
+        print("output:", parameters["output"])
+
         # TODO: Find equivalents for the undocumented methods below
         for outname, output in zip(self.outputnames, self.outputs):
             print(f"outname={outname}; output={output}")
-            # TODO: What is the equivalent for of getCompatibleFileName in QGIS3? Seems undocumented.
-            if hasattr(output, "getCompatibleFileName"):
-                args[outname] = output.getCompatibleFileName(self)
-            # TODO: What is the equivalent for of getValueAsCommandLineParameter in QGIS3? Seems undocumented.
-            elif hasattr(output, "getValueAsCommandLineParameter"):
-                args[outname] = output.getValueAsCommandLineParameter().replace('"', '')  # strip quotes - sdna adds them again
-            else:
-                QgsMessageLog.logMessage(f"ERROR: Invalid output type {output}")
 
+            args[outname] = self.parameterAsFileOutput(parameters, outname, context)
+
+            # # TODO: What is the equivalent for of getCompatibleFileName in QGIS3? Seems undocumented.
+            # if hasattr(output, "getCompatibleFileName"):
+            #     args[outname] = output.getCompatibleFileName(self)
+            # # TODO: What is the equivalent for of getValueAsCommandLineParameter in QGIS3? Seems undocumented.
+            # elif hasattr(output, "getValueAsCommandLineParameter"):
+            #     args[outname] = output.getValueAsCommandLineParameter().replace('"', '')  # strip quotes - sdna adds them again
+            # else:
+            #     QgsMessageLog.logMessage(f"ERROR: Invalid output type {output}", "sDNA")
+
+        # print("\nVARNAMES")
         for vn in self.varnames:
             value = parameters[vn]
             value = None if type(value) == QVariant and value.isNull() else value  # Convert Qt's NULL into Python's None
@@ -237,19 +248,19 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 args[vn] = ""
             # print(f"{vn}: {args[vn]} ({type(args[vn])})")
 
-        args["input"] = "dummy"  # TODO: Temporary to move things along
-        args["output"] = "dummy"  # TODO: Temporary to move things along
+        print("input:", args["input"])
+        print("output:", args["output"])
 
         return args
 
-    def extract_syntax(self, args, context, feedback):
+    def extract_syntax(self, args, context, feedback, source_crs):
         syntax = self.algorithm_spec.getSyntax(args)
         # convert inputs to shapefiles if necessary, renaming in syntax as appropriate
         converted_inputs = {}
         print("syntax items:", syntax["inputs"])
         for name, path in syntax["inputs"].items():
-            QgsMessageLog.logMessage(f"path:{path}", "sDNA")
-            if path and path != "dummy":
+            print(f"extract_syntax() path:{path}")
+            if path:
                 # convert inputs to shapefiles if they aren't already shp or csv
                 # do this by hand rather than using dataobjects.exportVectorLayer(processing.getObject(path))
                 # as we want to ignore selection if present
@@ -261,13 +272,13 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                             QgsProcessingUtils.mapLayerFromString(path, context, allowLoadingNewLayers=True),
                             temporary_file,
                             "utf-8",
-                            # TODO: None is not a valid value here. However this documentation says to use
-                            # an "invalid CRS for no reprojection". What should we use here? What is invalid?
-                            # https://qgis.org/pyqgis/3.14/core/QgsVectorFileWriter.html?highlight=qgsvectorfilewriter#qgis.core.QgsVectorFileWriter.writeAsVectorFormat
-                            None,
+                            source_crs,
                             "ESRI Shapefile"
                         )
-                        assert ret == QgsVectorFileWriter.NoError
+                        print(f"ret={ret}")
+                        if ret != QgsVectorFileWriter.NoError:
+                            print("ERROR WRITING TEMP FILE!")
+                        # assert ret == QgsVectorFileWriter.NoError
                         converted_inputs[name] = tempfile
                 else:
                     converted_inputs[name] = path
@@ -281,7 +292,8 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         print(f"sDNA Command:\n\tsyntax={syntax}\n\tsdna_path={self.sdna_path}")
         sdna_command_path = self.sdna_path[:-5]
         print(f"sdna_command_path", sdna_command_path)
-        return self.run_sdna_command(syntax, self.sdna_path, feedback, pythonexe, pythonpath)
+        # return self.run_sdna_command(syntax, self.sdna_path, feedback, pythonexe, pythonpath)
+        return 0
 
     def get_qgis_python_installation(self):
         qgisbase = os.path.dirname(os.path.dirname(sys.executable))
