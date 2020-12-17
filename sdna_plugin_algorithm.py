@@ -25,6 +25,7 @@ import tempfile
 
 from PyQt5.QtCore import QVariant
 from qgis.PyQt.QtCore import QCoreApplication
+from qgis.core import QgsProject
 from qgis.core import QgsMessageLog
 from qgis.core import QgsProcessing
 from qgis.core import QgsProcessingAlgorithm
@@ -215,6 +216,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         args = {}
 
         print("parameters:", parameters)
+        print("input:", parameters["input"])
         print("output:", parameters["output"])
 
         for outname, output in zip(self.outputnames, self.outputs):
@@ -231,29 +233,35 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 args[vn] = self.selectvaroptions[vn][args[vn]]
             if args[vn] is None:
                 args[vn] = ""
-            # print(f"{vn}: {args[vn]} ({type(args[vn])})")
+            print(f"{vn}: {args[vn]} ({type(args[vn])})")
 
-        print("input:", args["input"])
-        print("output:", args["output"])
+        # Get the path to the source of the layer. If the layer was loaded from a file
+        # it will have a file extension that we will check later so see if we need to
+        # create a temporary file to write the contents of a memory layer (that won't
+        # have a file extension).
+        layer_id = args["input"]
+        layer = QgsProject.instance().mapLayer(layer_id)
+        args["input"] = layer.source()
+
+        print("input:", args["input"], type(args["input"]))
+        print("output:", args["output"], type(args["output"]))
 
         return args
 
     def extract_syntax(self, args, context, feedback, source_crs):
         # convert inputs to shapefiles if necessary, renaming in syntax as appropriate
-        
         syntax = self.algorithm_spec.getSyntax(args)
-        # print("syntax:", syntax)
         converted_inputs = {}
-        # print("syntax items:", syntax["inputs"])
+        # print("syntax:", syntax)
+        # print("syntax inputs:", syntax["inputs"])
         for name, path in syntax["inputs"].items():
-            # print(f"name={name}; path={path}")
-            # print(f"extract_syntax() path:'{path}'")
+            print(f"name={name}; path={path}")
             if path:
                 _, file_extension = os.path.splitext(path.lower())
                 if not file_extension or file_extension not in [".shp", ".csv"]:
-                    # If the input is a layer that did not come from a shapefile or a CSV file
-                    # (e.g. a memory layer) we need to write it to a file so sDNA can read it
-                    # as its input file.
+                    # If the input layer did not come from a shapefile or a CSV file or does not
+                    # have a file extension (in the case of a memory layer) we need to write the
+                    # contents of the layer to a temporary file so sDNA can read it as its input file.
                     with tempfile.TemporaryDirectory() as tmp:
                         temporary_filename = f"{tmp}.shp"
                         print("Temp file:", temporary_filename)
