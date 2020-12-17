@@ -249,25 +249,24 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
             print(f"extract_syntax() path:'{path}'")
             if path:
                 _, file_extension = os.path.splitext(path.lower())
-                if file_extension and file_extension not in [".shp", ".csv"]:
-                    # convert inputs to shapefiles if they aren't already shp or csv
-                    # do this by hand rather than using dataobjects.exportVectorLayer(processing.getObject(path))
-                    # as we want to ignore selection if present
-                    feedback.setProgressText(f"Converting input to shapefile: {path}")
+                if not file_extension or file_extension not in [".shp", ".csv"]:
+                    # If the input is a layer that did not come from a shapefile or a CSV file
+                    # (e.g. a memory layer) we need to write it to a file so sDNA can read it
+                    # as its input file.
                     with tempfile.TemporaryDirectory() as tmp:
-                        temporary_file = os.path.join(tmp, "shp")
+                        temporary_filename = f"{tmp}.shp"
+                        print("Temp file:", temporary_filename)
+                        feedback.setProgressText(f"Converting input layer to shapefile: {temporary_filename}")
                         ret = QgsVectorFileWriter.writeAsVectorFormat(
                             QgsProcessingUtils.mapLayerFromString(path, context, allowLoadingNewLayers=True),
-                            temporary_file,
+                            temporary_filename,
                             "utf-8",
                             source_crs,
                             "ESRI Shapefile"
                         )
-                        print(f"ret={ret}")
                         if ret != QgsVectorFileWriter.NoError:
-                            print("ERROR WRITING TEMP FILE!")
-                        # assert ret == QgsVectorFileWriter.NoError
-                        converted_inputs[name] = tempfile
+                            QgsMessageLog.logMessage("ERROR: COULD NOT WRITE TEMPORARY SHAPEFILE", "SDNA")
+                        converted_inputs[name] = temporary_filename
                 else:
                     converted_inputs[name] = path
         syntax["inputs"] = converted_inputs
