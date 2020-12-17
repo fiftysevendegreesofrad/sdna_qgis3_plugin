@@ -252,8 +252,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         # convert inputs to shapefiles if necessary, renaming in syntax as appropriate
         syntax = self.algorithm_spec.getSyntax(args)
         converted_inputs = {}
-        # print("syntax:", syntax)
-        # print("syntax inputs:", syntax["inputs"])
         for name, path in syntax["inputs"].items():
             print(f"name={name}; path={path}")
             if path:
