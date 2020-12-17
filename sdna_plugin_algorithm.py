@@ -239,14 +239,15 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         return args
 
     def extract_syntax(self, args, context, feedback, source_crs):
-        syntax = self.algorithm_spec.getSyntax(args)
-        print("syntax:", syntax)
         # convert inputs to shapefiles if necessary, renaming in syntax as appropriate
+        
+        syntax = self.algorithm_spec.getSyntax(args)
+        # print("syntax:", syntax)
         converted_inputs = {}
-        print("syntax items:", syntax["inputs"])
+        # print("syntax items:", syntax["inputs"])
         for name, path in syntax["inputs"].items():
-            print(f"name={name}; path={path}")
-            print(f"extract_syntax() path:'{path}'")
+            # print(f"name={name}; path={path}")
+            # print(f"extract_syntax() path:'{path}'")
             if path:
                 _, file_extension = os.path.splitext(path.lower())
                 if not file_extension or file_extension not in [".shp", ".csv"]:
