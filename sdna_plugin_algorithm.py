@@ -25,22 +25,24 @@ import tempfile
 
 from PyQt5.QtCore import QVariant
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import QgsProject
-from qgis.core import QgsMessageLog
-from qgis.core import QgsProcessing
-from qgis.core import QgsProcessingAlgorithm
-from qgis.core import QgsProcessingOutputFile
-from qgis.core import QgsProcessingOutputVectorLayer
-from qgis.core import QgsProcessingParameterBoolean
-from qgis.core import QgsProcessingParameterEnum
-from qgis.core import QgsProcessingParameterField
-from qgis.core import QgsProcessingParameterFile
-from qgis.core import QgsProcessingParameterString
-from qgis.core import QgsProcessingParameterVectorLayer
-from qgis.core import QgsProcessingParameterFeatureSource
-from qgis.core import QgsProcessingParameterFeatureSink
-from qgis.core import QgsVectorFileWriter
-from qgis.core import QgsProcessingUtils
+from qgis.core import (
+    QgsProject,
+    QgsMessageLog,
+    QgsProcessing,
+    QgsProcessingAlgorithm,
+    QgsProcessingOutputFile,
+    QgsProcessingOutputVectorLayer,
+    QgsProcessingParameterBoolean,
+    QgsProcessingParameterEnum,
+    QgsProcessingParameterField,
+    QgsProcessingParameterFile,
+    QgsProcessingParameterString,
+    QgsProcessingParameterVectorLayer,
+    QgsProcessingParameterFeatureSource,
+    QgsProcessingParameterFeatureSink,
+    QgsVectorFileWriter,
+    QgsProcessingUtils
+)
 
 
 class SDNAAlgorithm(QgsProcessingAlgorithm):

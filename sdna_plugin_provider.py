@@ -22,15 +22,19 @@ __revision__ = "$Format:%H$"
 import os
 import sys
 
-from PyQt5.QtWidgets import QDialog
-from PyQt5.QtWidgets import QMessageBox
-from qgis.core import QgsMessageLog
-from qgis.core import QgsProcessingProvider
-from qgis.core import QgsSettings
-
-from processing.core.ProcessingConfig import Setting
-from processing.core.ProcessingConfig import ProcessingConfig
-
+from PyQt5.QtWidgets import (
+    QDialog,
+    QMessageBox
+)
+from qgis.core import (
+    QgsSettings,
+    QgsMessageLog,
+    QgsProcessingProvider
+)
+from processing.core.ProcessingConfig import (
+    Setting,
+    ProcessingConfig
+)
 from .sdna_plugin_algorithm import SDNAAlgorithm
 
 
