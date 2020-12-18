@@ -90,14 +90,15 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "OFC":
-                print(f"OFC Parameter: {varname} '{displayname}'")
-                output = QgsProcessingParameterFeatureSink(
+                # print(f"OFC Parameter: {varname} '{displayname}'")
+                output = QgsProcessingParameterFileDestination(
                     varname,
                     self.tr(displayname),
+                    "SHP files (*.shp)"
                 )
                 self.outputs.append(output)
                 self.addParameter(output)
-                print("OFC output:", output)
+                # print("OFC output:", output)
             elif datatype == "InFile":
                 # print(f"InFile Parameter: {varname} '{displayname}'")
                 self.addParameter(
@@ -120,7 +121,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "OutFile":
-                print(f"OutFile Parameter: {varname} '{displayname}'")
+                # print(f"OutFile Parameter: {varname} '{displayname}'")
                 output = QgsProcessingParameterFileDestination(
                     varname,
                     self.tr(displayname),
@@ -196,16 +197,9 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         source = self.parameterAsSource(parameters, 'input', context)
         source_crs = source.sourceCrs()
 
-        # The parameterAsSource method return a QgsProcessingFeatureSource object that
-        # operates on all of the features. To issue this warning, we'd need to check
-        # if QGIS has a selection in the active layer, which would be the active
-        # layer when this processing algorithm was invoked. However, when the input 
-        # is chosen by selecting a file the current selection would not be relevant.
-        # https://qgis.org/pyqgis/3.14/core/QgsProcessingFeatureSource.html#module-QgsProcessingFeatureSource
-        #
-        # feedback.setProgressText("**********************************************************************\n"\
-        #                         "WARNING: sDNA ignores your selection and will process the entire layer\n"\
-        #                         "**********************************************************************")
+        feedback.setProgressText("**********************************************************************\n"\
+                                 "WARNING: sDNA ignores your selection and will process the entire layer\n"\
+                                 "**********************************************************************")
 
         args = self.extract_args(parameters, context)
         print(f"\nargs: {args}")
@@ -228,17 +222,10 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
         print("len:", len(list(zip(self.outputnames, self.outputs))))
         for outname, output in zip(self.outputnames, self.outputs):
-            print(f"outname={outname}; output={output} type={type(output)}")
-            print("O:", self.parameterAsFileOutput(parameters, outname, context))
+            # print(f"outname={outname}; output={output} type={type(output)}")
+            # print("O:", self.parameterAsFileOutput(parameters, outname, context))
             args[outname] = self.parameterAsFileOutput(parameters, outname, context)
-
-            source = self.parameterAsSource(parameters, 'input', context)
-            (sink, dest_id) = self.parameterAsSink(parameters, outname, context, source.fields(), source.wkbType(), source.sourceCrs())
-            print(f"sink={sink} type={type(sink)}")
-            print(f"dest_id={dest_id} type={type(dest_id)}")
-
-            # args[outname] = output.generateTemporaryDestination()
-            print(f"args[{outname}]={args[outname]} type={type(args[outname])}")
+            # print(f"args[{outname}]={args[outname]} type={type(args[outname])}")
             # TODO: Do we need to handle command line parameters?
             # args[outname] = output.getValueAsCommandLineParameter().replace('"', '')  # strip quotes - sdna adds them again
 
@@ -250,7 +237,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 args[vn] = self.selectvaroptions[vn][args[vn]]
             if args[vn] is None:
                 args[vn] = ""
-            print(f"{vn}: {args[vn]} ({type(args[vn])})")
+            # print(f"{vn}: {args[vn]} ({type(args[vn])})")
 
         # Get the path to the source of the layer. If the layer was loaded from a file
         # it will have a file extension that we will check later so see if we need to
@@ -259,8 +246,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         layer_id = args["input"]
         layer = QgsProject.instance().mapLayer(layer_id)
         args["input"] = layer.source()
-
-        print()
 
         print("input:", args["input"], type(args["input"]))
         print("output:", args["output"], type(args["output"]))
