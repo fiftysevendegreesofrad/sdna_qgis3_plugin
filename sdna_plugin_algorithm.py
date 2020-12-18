@@ -41,6 +41,7 @@ from qgis.core import (
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFileDestination,
+    QgsProcessingParameterVectorDestination,
     QgsVectorFileWriter,
     QgsProcessingUtils
 )
@@ -91,10 +92,10 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 )
             elif datatype == "OFC":
                 # print(f"OFC Parameter: {varname} '{displayname}'")
-                output = QgsProcessingParameterFileDestination(
+                output = QgsProcessingParameterVectorDestination(
                     varname,
-                    self.tr(displayname),
-                    "SHP files (*.shp)"
+                    self.tr(displayname)
+                    # "SHP files (*.shp)"
                 )
                 self.outputs.append(output)
                 self.addParameter(output)
