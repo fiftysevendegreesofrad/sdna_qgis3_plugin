@@ -81,7 +81,7 @@ class SDNAPluginProvider(QgsProcessingProvider):
             QDialog(),
             "sDNA: Error",
             (
-                "Please ensure sDNA version 3.0 or later is installed ensure"
+                "Please ensure sDNA version 3.0 or later is installed ensure "
                 "the sDNA installation folder is set correctly in"
                 f"Processing -> Options -> Providers -> {self.longName()}"
             )
