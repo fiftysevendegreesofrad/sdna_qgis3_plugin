@@ -98,7 +98,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 )
                 self.outputs.append(output)
                 self.addParameter(output)
-                # print("OFC output:", output)
             elif datatype == "InFile":
                 # print(f"InFile Parameter: {varname} '{displayname}'")
                 self.addParameter(
@@ -188,9 +187,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
             else:
                 raise Exception(f"Unrecognized parameter type: '{datatype}'")
 
-        # print(f"\noutputnames={self.outputnames}")
-        # print(f"varnames={self.varnames}")
-
 
     def processAlgorithm(self, parameters, context, feedback):
         # 'input' is the name of the sDNA variable for the input layer
@@ -207,11 +203,16 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         syntax = self.extract_syntax(args, context, feedback, source_crs)
         print(f"\nsyntax: {syntax}")
 
+        return_object = {"output": syntax["outputs"]["net"]}
+        print(f"return object={return_object}")
+
         retval = self.issue_sdna_command(syntax, feedback)
         if retval != 0:
             QgsMessageLog.logMessage("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY", "SDNA")
 
-        return {}
+        # Return the results of the algorithm.
+        # TODO: How are the results used?
+        return return_object
 
     def extract_args(self, parameters, context):
         args = {}
@@ -220,12 +221,9 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         print("input:", parameters["input"])
         print("output:", parameters["output"])
 
-        print("len:", len(list(zip(self.outputnames, self.outputs))))
         for outname, output in zip(self.outputnames, self.outputs):
             # print(f"outname={outname}; output={output} type={type(output)}")
-            # print("O:", self.parameterAsFileOutput(parameters, outname, context))
             args[outname] = self.parameterAsFileOutput(parameters, outname, context)
-            # print(f"args[{outname}]={args[outname]} type={type(args[outname])}")
             # TODO: Do we need to handle command line parameters?
             # args[outname] = output.getValueAsCommandLineParameter().replace('"', '')  # strip quotes - sdna adds them again
 
@@ -286,22 +284,15 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
     def issue_sdna_command(self, syntax, feedback):
         pythonexe, pythonpath = self.get_qgis_python_installation()
-        print(f"\nPython:\n\texe={pythonexe};\n\tpath={pythonpath}")
-        print(f"sDNA Command:\n\tsyntax={syntax}\n\tsdna_path={self.sdna_path}")
         sdna_command_path = self.sdna_path[:-5]
-        print(f"sdna_command_path", sdna_command_path)
         progress_adapter = ProgressAdaptor(feedback)
         return self.run_sdna_command(syntax, self.sdna_path, progress_adapter, pythonexe, pythonpath)
-        # return 0
 
     def get_qgis_python_installation(self):
         qgisbase = os.path.dirname(os.path.dirname(sys.executable))
         pythonexe = os.path.join(qgisbase, "bin", "python3.exe")
         pythonbase = os.path.join(qgisbase, "apps", "python27")
         pythonpath = ";".join([os.path.join(pythonbase, x) for x in ["", "Lib", "Lib/site-packages"]])
-        print()
-        print(f"qgisbase={qgisbase}")
-        print(f"pythonpath={pythonpath}")
         return pythonexe, pythonpath
 
     def name(self):
