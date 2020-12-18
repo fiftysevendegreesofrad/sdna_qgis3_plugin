@@ -40,6 +40,7 @@ from qgis.core import (
     QgsProcessingParameterVectorLayer,
     QgsProcessingParameterFeatureSource,
     QgsProcessingParameterFeatureSink,
+    QgsProcessingParameterFileDestination,
     QgsVectorFileWriter,
     QgsProcessingUtils
 )
@@ -120,9 +121,13 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 )
             elif datatype == "OutFile":
                 print(f"OutFile Parameter: {varname} '{displayname}'")
-                # output = QgsProcessingParameterOutputFile(varname, self.tr(displayname))
-                # self.outputs.append(output)
-                # self.addParameter(output)
+                output = QgsProcessingParameterFileDestination(
+                    varname,
+                    self.tr(displayname),
+                    optional=not required
+                )
+                self.outputs.append(output)
+                self.addParameter(output)
             elif datatype == "Field":
                 # print(f"Field Parameter: {varname} '{displayname}'")
                 fieldtype, source = filter
@@ -221,9 +226,19 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         print("input:", parameters["input"])
         print("output:", parameters["output"])
 
+        print("len:", len(list(zip(self.outputnames, self.outputs))))
         for outname, output in zip(self.outputnames, self.outputs):
-            print(f"outname={outname}; output={output}")
+            print(f"outname={outname}; output={output} type={type(output)}")
+            print("O:", self.parameterAsFileOutput(parameters, outname, context))
             args[outname] = self.parameterAsFileOutput(parameters, outname, context)
+
+            source = self.parameterAsSource(parameters, 'input', context)
+            (sink, dest_id) = self.parameterAsSink(parameters, outname, context, source.fields(), source.wkbType(), source.sourceCrs())
+            print(f"sink={sink} type={type(sink)}")
+            print(f"dest_id={dest_id} type={type(dest_id)}")
+
+            # args[outname] = output.generateTemporaryDestination()
+            print(f"args[{outname}]={args[outname]} type={type(args[outname])}")
             # TODO: Do we need to handle command line parameters?
             # args[outname] = output.getValueAsCommandLineParameter().replace('"', '')  # strip quotes - sdna adds them again
 
@@ -245,6 +260,8 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         layer = QgsProject.instance().mapLayer(layer_id)
         args["input"] = layer.source()
 
+        print()
+
         print("input:", args["input"], type(args["input"]))
         print("output:", args["output"], type(args["output"]))
 
@@ -253,6 +270,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
     def extract_syntax(self, args, context, feedback, source_crs):
         # convert inputs to shapefiles if necessary, renaming in syntax as appropriate
         syntax = self.algorithm_spec.getSyntax(args)
+        print("SYNTAX:", syntax)
         converted_inputs = {}
         for name, path in syntax["inputs"].items():
             print(f"name={name}; path={path}")
