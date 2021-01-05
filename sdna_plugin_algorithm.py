@@ -188,7 +188,10 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
         args = self.extract_args(parameters, context)
         syntax = self.extract_syntax(args, context, feedback, source_crs)
-        return_object = {"output": syntax["outputs"]["net"]}
+
+        return_object = {}
+        if "net" in syntax["outputs"]:
+            return_object["output"] = syntax["outputs"]["net"]
 
         retval = self.issue_sdna_command(syntax, feedback)
         if retval != 0:
