@@ -73,15 +73,12 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
         for varname, displayname, datatype, filter, default, required in self.algorithm_spec.getInputSpec():
 
-            # print(f"varname={varname} ('{self.tr(displayname)}') datatype={datatype} required={required}")
-
             if datatype == "OFC" or datatype == "OutFile":
                 self.outputnames += [varname]
             else:
                 self.varnames += [varname]
 
             if datatype == "FC":
-                # print(f"FC Parameter: {varname} '{displayname}'")
                 self.addParameter(
                     QgsProcessingParameterFeatureSource(
                         varname,
@@ -91,16 +88,13 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "OFC":
-                # print(f"OFC Parameter: {varname} '{displayname}'")
                 output = QgsProcessingParameterVectorDestination(
                     varname,
                     self.tr(displayname)
-                    # "SHP files (*.shp)"
                 )
                 self.outputs.append(output)
                 self.addParameter(output)
             elif datatype == "InFile":
-                # print(f"InFile Parameter: {varname} '{displayname}'")
                 self.addParameter(
                     QgsProcessingParameterFile(
                         varname,
@@ -111,7 +105,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "MultiInFile":
-                # print(f"MultiInFile Parameter: {varname} '{displayname}'")
                 self.addParameter(
                     QgsProcessingParameterFile(
                         varname,
@@ -121,7 +114,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "OutFile":
-                # print(f"OutFile Parameter: {varname} '{displayname}'")
                 output = QgsProcessingParameterFileDestination(
                     varname,
                     self.tr(displayname),
@@ -130,7 +122,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 self.outputs.append(output)
                 self.addParameter(output)
             elif datatype == "Field":
-                # print(f"Field Parameter: {varname} '{displayname}'")
                 fieldtype, source = filter
                 self.addParameter(
                     QgsProcessingParameterField(
@@ -142,7 +133,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "MultiField":
-                # print(f"MultiField Parameter: {varname} '{displayname}'")
                 self.addParameter(
                     QgsProcessingParameterString(
                         varname,
@@ -153,7 +143,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "Bool":
-                # print(f"Bool Parameter: {varname} '{displayname}'")
                 self.addParameter(
                     QgsProcessingParameterBoolean(
                         varname,
@@ -163,7 +152,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "Text":
-                # print(f"Text Parameter: {varname} '{displayname}'")
                 if filter:
                     self.addParameter(
                         QgsProcessingParameterEnum(
@@ -199,34 +187,21 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                                  "**********************************************************************")
 
         args = self.extract_args(parameters, context)
-        print(f"\nargs: {args}")
-
         syntax = self.extract_syntax(args, context, feedback, source_crs)
-        print(f"\nsyntax: {syntax}")
-
         return_object = {"output": syntax["outputs"]["net"]}
-        print(f"return object={return_object}")
 
         retval = self.issue_sdna_command(syntax, feedback)
         if retval != 0:
             QgsMessageLog.logMessage("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY", "SDNA")
 
         # Return the results of the algorithm.
-        # TODO: How are the results used?
         return return_object
 
     def extract_args(self, parameters, context):
         args = {}
 
-        print("parameters:", parameters)
-        print("input:", parameters["input"])
-        print("output:", parameters["output"])
-
         for outname, output in zip(self.outputnames, self.outputs):
-            # print(f"outname={outname}; output={output} type={type(output)}")
             args[outname] = self.parameterAsFileOutput(parameters, outname, context)
-            # TODO: Do we need to handle command line parameters?
-            # args[outname] = output.getValueAsCommandLineParameter().replace('"', '')  # strip quotes - sdna adds them again
 
         for vn in self.varnames:
             value = parameters[vn]
@@ -236,7 +211,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 args[vn] = self.selectvaroptions[vn][args[vn]]
             if args[vn] is None:
                 args[vn] = ""
-            # print(f"{vn}: {args[vn]} ({type(args[vn])})")
 
         # Get the path to the source of the layer. If the layer was loaded from a file
         # it will have a file extension that we will check later so see if we need to
@@ -245,19 +219,13 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         layer_id = args["input"]
         layer = QgsProject.instance().mapLayer(layer_id)
         args["input"] = layer.source()
-
-        print("input:", args["input"], type(args["input"]))
-        print("output:", args["output"], type(args["output"]))
-
         return args
 
     def extract_syntax(self, args, context, feedback, source_crs):
-        # convert inputs to shapefiles if necessary, renaming in syntax as appropriate
+        # Convert inputs to shapefiles if necessary, renaming in syntax as appropriate
         syntax = self.algorithm_spec.getSyntax(args)
-        print("SYNTAX:", syntax)
         converted_inputs = {}
         for name, path in syntax["inputs"].items():
-            print(f"name={name}; path={path}")
             if path:
                 _, file_extension = os.path.splitext(path.lower())
                 if not file_extension or file_extension not in [".shp", ".csv"]:
@@ -266,7 +234,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     # contents of the layer to a temporary file so sDNA can read it as its input file.
                     with tempfile.TemporaryDirectory() as tmp:
                         temporary_filename = f"{tmp}.shp"
-                        print("Temp file:", temporary_filename)
                         feedback.setProgressText(f"Converting input layer to shapefile: {temporary_filename}")
                         ret = QgsVectorFileWriter.writeAsVectorFormat(
                             QgsProcessingUtils.mapLayerFromString(path, context, allowLoadingNewLayers=True),
