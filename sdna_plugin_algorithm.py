@@ -42,9 +42,11 @@ from qgis.core import (
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterFileDestination,
     QgsProcessingParameterVectorDestination,
+    QgsVectorLayer,
     QgsVectorFileWriter,
     QgsProcessingUtils
 )
+import qgis.utils
 
 
 class SDNAAlgorithm(QgsProcessingAlgorithm):
@@ -196,6 +198,21 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         retval = self.issue_sdna_command(syntax, feedback)
         if retval != 0:
             QgsMessageLog.logMessage("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY", "SDNA")
+
+        print("BEFORE RETURNING THE RESULT OBJECT!")
+
+        if "output" in return_object:
+            new_output_layer_path = return_object["output"]
+            if new_output_layer_path.endswith(".gpkg"):
+                new_output_layer_path = new_output_layer_path[:-5] + ".shp"
+            print("new_output_layer_path=", new_output_layer_path)
+            new_output_layer = QgsVectorLayer(new_output_layer_path, "sDNA Output Later", "ogr")
+            if not new_output_layer.isValid():
+                print("sDNA output layer failed to load!")
+            else:
+                QgsProject.instance().addMapLayer(new_output_layer)
+                new_output_layer.triggerRepaint()
+                qgis.utils.iface.layerTreeView().refreshLayerSymbology(new_output_layer.id())
 
         # Return the results of the algorithm.
         return return_object
