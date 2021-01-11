@@ -191,9 +191,17 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         args = self.extract_args(parameters, context)
         syntax = self.extract_syntax(args, context, feedback, source_crs)
 
-        return_object = {}
-        if "net" in syntax["outputs"]:
-            return_object["output"] = syntax["outputs"]["net"]
+        print("ARGS:", args)
+        print("SYNTAX:", syntax)
+
+        # return_object = {}
+        # if "net" in syntax["outputs"]:
+        #     net = syntax["outputs"]["net"]
+        #     print("###NET###", net)
+        #     if net.endswith(".gpkg"):
+        #         net = net[:-5] + ".shp"
+        #     print("###NET2##", net)
+        # syntax["outputs"]["net"] = net
 
         retval = self.issue_sdna_command(syntax, feedback)
         if retval != 0:
@@ -201,27 +209,30 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
         print("BEFORE RETURNING THE RESULT OBJECT!")
 
-        if "output" in return_object:
-            new_output_layer_path = return_object["output"]
-            if new_output_layer_path.endswith(".gpkg"):
-                new_output_layer_path = new_output_layer_path[:-5] + ".shp"
-            print("new_output_layer_path=", new_output_layer_path)
-            new_output_layer = QgsVectorLayer(new_output_layer_path, "sDNA Output Later", "ogr")
-            if not new_output_layer.isValid():
-                print("sDNA output layer failed to load!")
-            else:
-                QgsProject.instance().addMapLayer(new_output_layer)
-                new_output_layer.triggerRepaint()
-                qgis.utils.iface.layerTreeView().refreshLayerSymbology(new_output_layer.id())
+        # if "output" in return_object:
+        #     new_output_layer_path = return_object["output"]
+        #     if new_output_layer_path.endswith(".gpkg"):
+        #         new_output_layer_path = new_output_layer_path[:-5] + ".shp"
+        #     print("new_output_layer_path=", new_output_layer_path)
+        #     new_output_layer = QgsVectorLayer(new_output_layer_path, "sDNA Output Later", "ogr")
+        #     if not new_output_layer.isValid():
+        #         print("sDNA output layer failed to load!")
+        #     else:
+        #         QgsProject.instance().addMapLayer(new_output_layer)
+        #         new_output_layer.triggerRepaint()
+        #         qgis.utils.iface.layerTreeView().refreshLayerSymbology(new_output_layer.id())
 
         # Return the results of the algorithm.
+        return_object = {
+            "OUTPUT": self.outputs[0]
+        }
         return return_object
 
     def extract_args(self, parameters, context):
         args = {}
 
         for outname, output in zip(self.outputnames, self.outputs):
-            args[outname] = self.parameterAsFileOutput(parameters, outname, context)
+            args[outname] = self.parameterAsOutputLayer(parameters, outname, context)
 
         for vn in self.varnames:
             value = parameters[vn]
