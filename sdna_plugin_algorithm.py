@@ -51,6 +51,18 @@ import qgis.utils
 
 class ShapefileParameterVectorDestination(QgsProcessingParameterVectorDestination):
 
+    def __init__(
+        self,
+        name,
+        description = '',
+        type = QgsProcessing.TypeVectorAnyGeometry,
+        defaultValue = None,
+        optional = False,
+        createByDefault = True
+    ):
+        super(QgsProcessingParameterVectorDestination, self).__init__(name, description, type, defaultValue, optional, createByDefault)
+
+
     def defaultFileExtension(self):
         return "shp"
 
@@ -88,8 +100,7 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
             if datatype == "FC":
                 self.addParameter(
-                    # QgsProcessingParameterFeatureSource(
-                    ShapefileParameterVectorDestination(
+                    QgsProcessingParameterFeatureSource(
                         varname,
                         self.tr(displayname),
                         types=[sdna_to_qgis_vectortype[filter]],
@@ -97,7 +108,8 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "OFC":
-                output = QgsProcessingParameterVectorDestination(
+                # output = QgsProcessingParameterVectorDestination(
+                output = ShapefileParameterVectorDestination(
                     varname,
                     self.tr(displayname)
                 )
