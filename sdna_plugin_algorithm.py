@@ -64,6 +64,7 @@ class ShapefileParameterVectorDestination(QgsProcessingParameterVectorDestinatio
 
 
     def defaultFileExtension(self):
+        """Override to use Shapefile as the temporary file format, as required by sDNA."""
         return "shp"
 
 
@@ -108,7 +109,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                     )
                 )
             elif datatype == "OFC":
-                # output = QgsProcessingParameterVectorDestination(
                 output = ShapefileParameterVectorDestination(
                     varname,
                     self.tr(displayname)
