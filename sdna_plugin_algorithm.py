@@ -49,6 +49,12 @@ from qgis.core import (
 import qgis.utils
 
 
+class ShapefileParameterVectorDestination(QgsProcessingParameterVectorDestination):
+
+    def defaultFileExtension(self):
+        return "shp"
+
+
 class SDNAAlgorithm(QgsProcessingAlgorithm):
 
     def __init__(self, algorithm_spec, sdna_path, run_sdna_command):
@@ -82,7 +88,8 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
 
             if datatype == "FC":
                 self.addParameter(
-                    QgsProcessingParameterFeatureSource(
+                    # QgsProcessingParameterFeatureSource(
+                    ShapefileParameterVectorDestination(
                         varname,
                         self.tr(displayname),
                         types=[sdna_to_qgis_vectortype[filter]],
