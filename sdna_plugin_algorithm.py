@@ -242,9 +242,9 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         # it will have a file extension that we will check later so see if we need to
         # create a temporary file to write the contents of a memory layer (that won't
         # have a file extension).
-        layer_id = args["input"]
-        layer = QgsProject.instance().mapLayer(layer_id)
-        args["input"] = layer.source()
+        # layer_id = args["input"]
+        # layer = QgsProject.instance().mapLayer(layer_id)
+        # args["input"] = layer.source()
         return args
 
     def extract_syntax(self, args, context, feedback, source_crs):
