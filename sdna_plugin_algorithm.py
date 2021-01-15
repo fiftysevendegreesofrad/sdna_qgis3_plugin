@@ -213,9 +213,9 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         # print("ARGS:", args)
         # print("SYNTAX:", syntax)
 
-        retval = self.issue_sdna_command(syntax, feedback)
-        if retval != 0:
-            QgsMessageLog.logMessage("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY", "SDNA")
+        # retval = self.issue_sdna_command(syntax, feedback)
+        # if retval != 0:
+        #     QgsMessageLog.logMessage("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY", "SDNA")
 
         # Return the results of the algorithm.
         return_object = {
@@ -238,13 +238,6 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
             if args[vn] is None:
                 args[vn] = ""
 
-        # Get the path to the source of the layer. If the layer was loaded from a file
-        # it will have a file extension that we will check later so see if we need to
-        # create a temporary file to write the contents of a memory layer (that won't
-        # have a file extension).
-        # layer_id = args["input"]
-        # layer = QgsProject.instance().mapLayer(layer_id)
-        # args["input"] = layer.source()
         return args
 
     def extract_syntax(self, args, context, feedback, source_crs):
