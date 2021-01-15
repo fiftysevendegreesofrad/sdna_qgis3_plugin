@@ -213,9 +213,9 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
         # print("ARGS:", args)
         # print("SYNTAX:", syntax)
 
-        # retval = self.issue_sdna_command(syntax, feedback)
-        # if retval != 0:
-        #     QgsMessageLog.logMessage("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY", "SDNA")
+        retval = self.issue_sdna_command(syntax, feedback)
+        if retval != 0:
+            QgsMessageLog.logMessage("ERROR: PROCESS DID NOT COMPLETE SUCCESSFULLY", "SDNA")
 
         # Return the results of the algorithm.
         return_object = {
