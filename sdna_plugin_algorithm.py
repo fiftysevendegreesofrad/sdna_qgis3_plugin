@@ -138,7 +138,8 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 output = QgsProcessingParameterFileDestination(
                     varname,
                     self.tr(displayname),
-                    optional=not required
+                    optional=not required,
+                    fileFilter = filter
                 )
                 self.outputs.append(output)
                 self.addParameter(output)
@@ -267,6 +268,15 @@ class SDNAAlgorithm(QgsProcessingAlgorithm):
                 else:
                     converted_inputs[name] = path
         syntax["inputs"] = converted_inputs
+        for name,path in syntax["outputs"].items():
+            if path:
+                _, file_extension = os.path.splitext(path.lower())
+                if file_extension not in [".shp", ".csv"]:
+                    # as it stands we can't force qgis to use shapefile as output, so complain and exit here if it's anything else
+                    message = "Output file is not shp or csv: "+path
+                    feedback.setProgressText("ERROR: "+message)
+                    QgsMessageLog.logMessage("ERROR: "+message, "SDNA")
+                    raise Exception(message)
         return syntax
 
     def issue_sdna_command(self, syntax, feedback):
