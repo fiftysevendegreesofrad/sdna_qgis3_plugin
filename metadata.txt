@@ -3,18 +3,25 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=sDNA
+name=Spatial Design Network Analysis
 qgisMinimumVersion=3.10
 description=This plugin allows you to use your installation of sDNA from within the QGIS GIS software.
-version=0.1
-author=Jeffrey Morgan
-email=MorganJ51@cardiff.ac.uk
+version=1.0
+author=Jeffrey Morgan, Crispin Cooper, Alain Chiaradia
+email=sdna@cardiff.ac.uk
 
-about=Provide a brief description of the plugin and its purpose.
+about=Allows use of the sDNA toolbox from QGIS 3.
+    sDNA version 4.1 or above must be installed first from http://www.cardiff.ac.uk/sdna 
 
-tracker=http://bugs
-repository=http://repo
-# End of mandatory metadata
+    sDNA is a spatial network analysis tool with general applicability, but particularly suited to modelling urban networks.  Standard sDNA currently calculates various measures of network density, gravity models, floating catchment, closeness, betweenness, convex hull and severance statistics.  These can be based on different analysis metrics (Angular, Euclidean, Custom).  Additional tools allow network preparation, statistical learning and prediction based on sDNA models.  Analyses can be weighted or unweighted, and weights can be applied per polyline, link or unit length.
+
+    An advanced version called sDNA+ is also available which can use arbitrary metrics from a user formula (hybrid metrics) as well as having presets for pedestrian, cyclist and vehicle use, and the ability to output analysis geometries (network radii, geodesics, convex hulls; one-to-one, one-to-many, one-to-all or all-to-all).  Version 3.1 adds OD Matrix input and Skim Matrix output.
+    
+    Development of this plugin was funded by Alain Chiaradia reinvesting revenue from sDNA+. The principal investigator was Crispin Cooper and the software engineer Jeffrey Morgan, based at Cardiff University departments of Geography and Planning, the Sustainable Places Research Institute and Data Innovation Institute.
+
+homepage=http://www.cardiff.ac.uk/sdna
+tracker=https://github.com/fiftysevendegreesofrad/sdna_qgis3_plugin/issues
+repository=https://github.com/fiftysevendegreesofrad/sdna_qgis3_plugin
 
 # Recommended items:
 
@@ -23,13 +30,11 @@ hasProcessingProvider=yes
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=python
+tags=analysis,processing,network,sdna,evaluation,urban design options appraisal
 
-homepage=http://homepage
-category=Analysis
-icon=icon.png
+category=Vector
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
@@ -39,8 +44,5 @@ deprecated=False
 # Check the documentation for more information.
 # plugin_dependencies=
 
-Category of the plugin: Raster, Vector, Database or Web
-#category=Vector
-
 # If the plugin can run on QGIS Server.
-server=False
+# server=False
