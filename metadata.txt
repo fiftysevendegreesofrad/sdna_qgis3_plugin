@@ -3,7 +3,7 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=Spatial Design Network Analysis
+name=Spatial Design Network Analysis for QGIS 3
 qgisMinimumVersion=3.10
 description=This plugin allows you to use your installation of sDNA from within the QGIS GIS software.
 version=1.0
