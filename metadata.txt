@@ -1,12 +1,8 @@
-# This file contains metadata for your plugin.
-
-# This file should be included when you package your plugin.# Mandatory items:
-
 [general]
-name=Spatial Design Network Analysis for QGIS 3
+name=Spatial Design Network Analysis
 qgisMinimumVersion=3.10
 description=This plugin allows you to use your installation of sDNA from within the QGIS GIS software.
-version=1.0
+version=4.1.0
 author=Jeffrey Morgan, Crispin Cooper, Alain Chiaradia
 email=sdna@cardiff.ac.uk
 
@@ -17,7 +13,9 @@ about=Allows use of the sDNA toolbox from QGIS 3.
 
     An advanced version called sDNA+ is also available which can use arbitrary metrics from a user formula (hybrid metrics) as well as having presets for pedestrian, cyclist and vehicle use, and the ability to output analysis geometries (network radii, geodesics, convex hulls; one-to-one, one-to-many, one-to-all or all-to-all).  Version 3.1 adds OD Matrix input and Skim Matrix output.
     
-    Development of this plugin was funded by Alain Chiaradia reinvesting revenue from sDNA+. The principal investigator was Crispin Cooper and the software engineer Jeffrey Morgan, based at Cardiff University departments of Geography and Planning, the Sustainable Places Research Institute and Data Innovation Institute.
+    Original development of this plugin was funded by the ESRC Impact Accelerator grant "sDNA for all".  The principal investigator was Alain Chiaradia and the co-investigator Crispin Cooper, based at Cardiff University department of Geography and Planning and the Sustainable Places Research Institute.
+
+    The update to support QGIS 3 was funded by Alain Chiaradia reinvesting revenue from sDNA+. The principal investigator was Crispin Cooper and the software engineer Jeffrey Morgan, based at Cardiff University departments of Geography and Planning, the Sustainable Places Research Institute and Data Innovation Institute.
 
 homepage=http://www.cardiff.ac.uk/sdna
 tracker=https://github.com/fiftysevendegreesofrad/sdna_qgis3_plugin/issues
